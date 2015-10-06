@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Lidgren.Network;
+using System.Diagnostics;
 
 namespace ShapeSpace
 {
@@ -9,11 +11,16 @@ namespace ShapeSpace
     /// </summary>
     public class Game1 : Game
     {
+        int version = 1;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
         public Game1()
         {
+            Actor a = new Actor(this, ref spriteBatch);
+            Components.Add(a);
+            
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
@@ -26,8 +33,12 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+            string arguments = "";
+            //Add the version
+            arguments += version;
 
+            Process server = Process.Start("ShapeSpaceServer.exe", arguments);
+            
             base.Initialize();
         }
 
@@ -62,6 +73,8 @@ namespace ShapeSpace
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            //Handle inputs here and redirect them to the actors that need them
+
             // TODO: Add your update logic here
 
             base.Update(gameTime);
@@ -76,6 +89,11 @@ namespace ShapeSpace
             GraphicsDevice.Clear(Color.Maroon);
 
             // TODO: Add your drawing code here
+            spriteBatch.Begin();
+            
+            //Add anything that draws in here?
+
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }
