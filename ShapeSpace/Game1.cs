@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Lidgren.Network;
 using System.Diagnostics;
+using System;
+using System.Threading;
 
 namespace ShapeSpace
 {
@@ -13,14 +15,13 @@ namespace ShapeSpace
     {
         int version = 1;
 
+        NetClient client;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
         public Game1()
-        {
-            Actor a = new Actor(this, ref spriteBatch);
-            Components.Add(a);
-            
+        {            
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
@@ -37,8 +38,21 @@ namespace ShapeSpace
             //Add the version
             arguments += version;
 
-            Process server = Process.Start("ShapeSpaceServer.exe", arguments);
-            
+            Process serverProc = Process.Start("ShapeSpaceServer.exe", arguments);
+
+            NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
+            config.MaximumConnections = 0;
+            client = new NetClient(config);
+            client.Start();
+
+            NetOutgoingMessage connectMessage = client.CreateMessage();
+            connectMessage.Write("Can I please connect?");
+
+            while (client.ConnectionsCount == 0)
+            {
+                client.Connect("127.0.0.1", 5566, connectMessage);
+            }
+
             base.Initialize();
         }
 
@@ -73,7 +87,19 @@ namespace ShapeSpace
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            //Handle inputs here and redirect them to the actors that need them
+            Vector2 input = Vector2.Zero;
+            KeyboardState keyState = Keyboard.GetState();
+
+            if (keyState.IsKeyDown(Keys.A))
+                input += new Vector2(-1,0);
+            if (keyState.IsKeyDown(Keys.D))
+                input += new Vector2(1, 0);
+            if (keyState.IsKeyDown(Keys.S))
+                input += new Vector2(0, -1);
+            if (keyState.IsKeyDown(Keys.W))
+                input += new Vector2(0, 1);
+
+
 
             // TODO: Add your update logic here
 
