@@ -8,17 +8,23 @@ using System.Threading;
 
 namespace ShapeSpace
 {
+    
+
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
     public class Game1 : Game
     {
         int version = 1;
+        bool awaitingResponseFromServer = false;
 
         NetClient client;
 
         GraphicsDeviceManager graphics;
+        Process serverProc;
         SpriteBatch spriteBatch;
+
+        Vector2 loc;
 
         public Game1()
         {            
@@ -38,10 +44,11 @@ namespace ShapeSpace
             //Add the version
             arguments += version;
 
-            Process serverProc = Process.Start("ShapeSpaceServer.exe", arguments);
+            serverProc = Process.Start("ShapeSpaceServer.exe", arguments);
 
             NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
             config.MaximumConnections = 0;
+            config.DisableMessageType(NetIncomingMessageType.WarningMessage);
             client = new NetClient(config);
             client.Start();
 
@@ -54,7 +61,11 @@ namespace ShapeSpace
             }
 
             base.Initialize();
+
+            loc = new Vector2(100,100);
         }
+
+        Texture2D pixel;
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -66,6 +77,8 @@ namespace ShapeSpace
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
+            pixel = new Texture2D(graphics.GraphicsDevice,1,1, false, SurfaceFormat.Vector4);
+            pixel.SetData(new[] {Color.White});
         }
 
         /// <summary>
@@ -99,7 +112,37 @@ namespace ShapeSpace
             if (keyState.IsKeyDown(Keys.W))
                 input += new Vector2(0, 1);
 
+            if(!awaitingResponseFromServer)
+            {
+                NetOutgoingMessage outMsg = client.CreateMessage();
+                byte b = 23;
+                outMsg.Write(b);
+                client.SendMessage(outMsg,NetDeliveryMethod.ReliableOrdered);
+                awaitingResponseFromServer = true;
+            }
 
+            NetIncomingMessage message;
+            while ((message = client.ReadMessage()) != null)
+            {
+                switch (message.MessageType)
+                {
+                    case NetIncomingMessageType.Data:
+                        // handle custom messages
+                        int inc = message.ReadInt32();
+
+                        if(inc == 10)
+                        {
+                            loc.X += 1;
+                            awaitingResponseFromServer = false;
+                        }
+                        break;
+                    /* .. */
+                    default:
+                        Console.WriteLine("unhandled message with type: "
+                            + message.MessageType);
+                        break;
+                }
+            }
 
             // TODO: Add your update logic here
 
@@ -116,12 +159,18 @@ namespace ShapeSpace
 
             // TODO: Add your drawing code here
             spriteBatch.Begin();
-            
-            //Add anything that draws in here?
+
+            spriteBatch.Draw(pixel,new Rectangle((int)loc.X,(int)loc.Y,20,20),Color.Blue);
 
             spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            client.Disconnect("Bye");
+            base.OnExiting(sender, args);
         }
     }
 }

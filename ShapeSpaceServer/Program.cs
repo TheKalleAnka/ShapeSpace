@@ -1,6 +1,7 @@
 ﻿using Lidgren.Network;
 using System;
 using System.Net;
+using System.Threading;
 
 class Program
 {
@@ -32,8 +33,17 @@ class Program
                 switch (message.MessageType)
                 {
                     case NetIncomingMessageType.ConnectionApproval:
-                        Console.WriteLine(message.ReadString());
+                        //Console.WriteLine(message.ReadString());
                         message.SenderConnection.Approve();
+                        break;
+                    case NetIncomingMessageType.Data:
+                        //Do logic
+                        Console.WriteLine(message.ReadByte()); 
+                        Thread.Sleep(10);
+                        NetOutgoingMessage m = server.CreateMessage();
+                        m.Write(10);
+                        server.SendMessage(m,message.SenderConnection,NetDeliveryMethod.ReliableOrdered);
+                        Console.WriteLine("Sent message");
                         break;
                 }
             }
