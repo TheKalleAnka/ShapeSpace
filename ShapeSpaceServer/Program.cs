@@ -7,51 +7,6 @@ class Program
 {
     static void Main(string[] args)
     {
-        if(args.Length > 0)
-        {
-            Console.WriteLine("Version: " + args[0]);
-        }
 
-        Console.WriteLine("Creating configuration...");
-
-        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
-        config.MaximumConnections = 10;
-        config.Port = 5566;
-        config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
-
-        Console.WriteLine("Starting server...");
-        NetServer server = new NetServer(config);
-        server.Start();
-        Console.WriteLine("Server started successfully!");
-        
-        bool serverRunning = true;
-        while(serverRunning)
-        {
-            NetIncomingMessage message = server.ReadMessage();
-            if (message != null)
-            {
-                switch (message.MessageType)
-                {
-                    case NetIncomingMessageType.ConnectionApproval:
-                        //Console.WriteLine(message.ReadString());
-                        message.SenderConnection.Approve();
-                        break;
-                    case NetIncomingMessageType.Data:
-                        //Do logic
-                        Console.WriteLine(message.ReadByte()); 
-                        Thread.Sleep(10);
-                        NetOutgoingMessage m = server.CreateMessage();
-                        m.Write(10);
-                        server.SendMessage(m,message.SenderConnection,NetDeliveryMethod.ReliableOrdered);
-                        Console.WriteLine("Sent message");
-                        break;
-                }
-            }
-            if (Console.KeyAvailable)
-                if (Console.ReadKey(true).Key == ConsoleKey.Escape)
-                    serverRunning = false;
-        }
-
-        server.Shutdown("Server shutting down!");
     }
 }
