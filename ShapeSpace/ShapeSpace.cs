@@ -8,17 +8,22 @@ using System.Threading;
 
 namespace ShapeSpace
 {
-    
-
     /// <summary>
-    /// This is the main type for your game.
+    /// This is the shell
     /// </summary>
-    public class Game1 : Game
+    public class ShapeSpace : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
-        public Game1()
+        Camera camera;
+
+        //These should be set when the player chooses to create the server
+        ClientComponent clientComponent;
+        ServerComponent serverComponent;
+
+
+        public ShapeSpace()
         {            
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -32,10 +37,15 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
+            //FOR TESTING PURPOSES
+            NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
+            config.MaximumConnections = 1;
+            clientComponent = new ClientComponent(config, GraphicsDevice);
+
+            camera = new Camera(GraphicsDevice.Viewport);
+
             base.Initialize();
         }
-
-        Texture2D pixel;
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -47,8 +57,7 @@ namespace ShapeSpace
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            pixel = new Texture2D(graphics.GraphicsDevice,1,1, false, SurfaceFormat.Vector4);
-            pixel.SetData(new[] {Color.White});
+            clientComponent.LoadContent();
         }
 
         /// <summary>
@@ -70,6 +79,17 @@ namespace ShapeSpace
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
+
+            if (Keyboard.GetState().IsKeyDown(Keys.D))
+                camera.Position += new Vector2(10, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (Keyboard.GetState().IsKeyDown(Keys.A))
+                camera.Position += new Vector2(-10, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (Keyboard.GetState().IsKeyDown(Keys.W))
+                camera.Position += new Vector2(0, -10) * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (Keyboard.GetState().IsKeyDown(Keys.S))
+                camera.Position += new Vector2(0, 10) * (float)gameTime.ElapsedGameTime.TotalSeconds;
+
             // TODO: Add your update logic here
 
             base.Update(gameTime);
@@ -84,7 +104,9 @@ namespace ShapeSpace
             GraphicsDevice.Clear(Color.Maroon);
 
             // TODO: Add your drawing code here
-            spriteBatch.Begin();
+            spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
+
+            clientComponent.Draw(ref spriteBatch, gameTime);
 
             spriteBatch.End();
 

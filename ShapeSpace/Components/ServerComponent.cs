@@ -1,10 +1,11 @@
 ﻿using Lidgren.Network;
+using Microsoft.Xna.Framework.Graphics;
 
 class ServerComponent : NetBaseComponent
 {
     NetServer server;
 
-    public ServerComponent(NetPeerConfiguration config) : base(config)
+    public ServerComponent(NetPeerConfiguration config, GraphicsDevice graphicsDevice) : base(config, graphicsDevice) 
     {
         server = (NetServer)base.peer;
     }

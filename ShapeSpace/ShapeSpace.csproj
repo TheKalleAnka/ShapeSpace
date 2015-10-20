@@ -45,13 +45,22 @@
     <Compile Include="Components\ClientComponent.cs" />
     <Compile Include="Components\NetBaseComponent.cs" />
     <Compile Include="Components\ServerComponent.cs" />
-    <Compile Include="Game1.cs" />
+    <Compile Include="Interfaces\IMenuClickable.cs" />
+    <Compile Include="Interface\Camera.cs" />
+    <Compile Include="ShapeSpace.cs" />
     <Compile Include="Gameplay Classes\Player.cs" />
+    <Compile Include="Interface\Button.cs" />
+    <Compile Include="Interface\InputField.cs" />
+    <Compile Include="Interface\Menu.cs" />
+    <Compile Include="Interface\MenuItem.cs" />
     <Compile Include="Levels\Scene.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FarseerPhysics MonoGame">
+      <HintPath>..\FarseerPhysics MonoGame.dll</HintPath>
+    </Reference>
     <Reference Include="Lidgren.Network, Version=3.4.0.456, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lidgren.Network.dll</HintPath>
@@ -72,9 +81,7 @@
   <ItemGroup>
     <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
