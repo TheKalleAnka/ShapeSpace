@@ -3,7 +3,7 @@ using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-class Player /*: BaseComponent?*/
+class Player
 {
     Vector2 position;
     //There is no rotation here since no players can spin!
@@ -13,7 +13,13 @@ class Player /*: BaseComponent?*/
     /// Determines whether this player is controlled by this client
     /// </summary>
     bool isLocal = false;
+    /// <summary>
+    /// Is this player on a server
+    /// </summary>
     bool isOnServer = false;
+    /// <summary>
+    /// An ID that is unique on this game
+    /// </summary>
     int networkID = 0;
 
     //DRAWING

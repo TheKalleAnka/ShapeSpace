@@ -3,13 +3,25 @@
 /// <summary>
 /// Abstract class which all items in a menu derive from
 /// </summary>
-abstract class MenuItem
+abstract class MenuItem : IDrawable
 {
-    public delegate void ClickedItem();
-    /// <summary>
-    /// Executes whenever an item in a menu is clicked
-    /// </summary>
-    public event ClickedItem OnClicked;
+    protected Rectangle rectangle { get; set; }
+    protected Color baseColor { get; set; }
+    protected Color foreColor { get; set; }
+    protected Color textColor { get; set; }
 
-    public Vector2 Position = Vector2.Zero;
+    protected bool IsPressOnThisItem(Vector2 pos)
+    {
+        if(pos.X > rectangle.X &&
+           pos.X < rectangle.X + rectangle.Width && 
+           pos.Y > rectangle.Y &&
+           pos.Y < rectangle.Y + rectangle.Height)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public virtual void Draw(GameTime gameTime) { }
 }

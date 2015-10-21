@@ -42,11 +42,17 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Components\ClientComponent.cs" />
-    <Compile Include="Components\NetBaseComponent.cs" />
-    <Compile Include="Components\ServerComponent.cs" />
+    <Compile Include="Components\BaseComponent.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="Components\GameComponent.cs" />
+    <Compile Include="Components\MenuComponent.cs" />
+    <Compile Include="Interfaces\IDrawable.cs" />
     <Compile Include="Interfaces\IMenuClickable.cs" />
+    <Compile Include="Interfaces\IUpdateable.cs" />
     <Compile Include="Interface\Camera.cs" />
+    <Compile Include="Observer\Observer.cs" />
+    <Compile Include="Observer\Subject.cs" />
     <Compile Include="ShapeSpace.cs" />
     <Compile Include="Gameplay Classes\Player.cs" />
     <Compile Include="Interface\Button.cs" />

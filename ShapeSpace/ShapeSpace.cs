@@ -1,32 +1,32 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Lidgren.Network;
-using System.Diagnostics;
-using System;
-using System.Threading;
 
 namespace ShapeSpace
 {
     /// <summary>
     /// This is the shell
     /// </summary>
-    public class ShapeSpace : Game
+    public class ShapeSpace : Game, Observer
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
         Camera camera;
 
-        //These should be set when the player chooses to create the server
-        ClientComponent clientComponent;
-        ServerComponent serverComponent;
-
-
         public ShapeSpace()
         {            
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+        }
+
+        public void OnNotify(object caller, string eventID)
+        {
+            switch(eventID)
+            {
+                
+            }
         }
 
         /// <summary>
@@ -37,10 +37,7 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
-            //FOR TESTING PURPOSES
-            NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
-            config.MaximumConnections = 1;
-            clientComponent = new ClientComponent(config, GraphicsDevice);
+
 
             camera = new Camera(GraphicsDevice.Viewport);
 
@@ -57,7 +54,6 @@ namespace ShapeSpace
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            clientComponent.LoadContent();
         }
 
         /// <summary>
@@ -105,8 +101,6 @@ namespace ShapeSpace
 
             // TODO: Add your drawing code here
             spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
-
-            clientComponent.Draw(ref spriteBatch, gameTime);
 
             spriteBatch.End();
 

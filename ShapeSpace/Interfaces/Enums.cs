@@ -1,0 +1,10 @@
+﻿enum GameStates
+{
+    PLAYING,
+    PAUSED,
+    MAINMENU,
+    GAMEOVER_WON,
+    GAMEOVER_LOST,
+    GAMEOVER_DRAW,
+    UNKNOWN
+}
