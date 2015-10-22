@@ -5,8 +5,12 @@ using System;
 class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
 {
     Menu currentMenu = null;
+    UICallback callback;
 
-    public UIComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) { }
+    public UIComponent(GraphicsDevice graphicsDevice, UICallback callback) : base(graphicsDevice) 
+    {
+        this.callback = callback;
+    }
 
     public void Draw(GameTime gameTime)
     {
@@ -48,6 +52,7 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
         Menu menu = new Menu();
 
         Button item = new Button(ref spriteBatch,new Rectangle(100,100,300,50), Color.ForestGreen, "BUTTON_START_GAME", "Play");
+        item.Callback += callback;
         menu.AddItem(item);
 
         return menu;

@@ -44,7 +44,7 @@ namespace ShapeSpace
             base.Initialize();
 
             gc = new GameComponent(GraphicsDevice);
-            uc = new UIComponent(GraphicsDevice);
+            uc = new UIComponent(GraphicsDevice, HandleUICallbacks);
 
             UpdateGameState(GameStates.MAINMENU);
         }
@@ -103,6 +103,16 @@ namespace ShapeSpace
             uc.Draw(gameTime);
 
             base.Draw(gameTime);
+        }
+
+        void HandleUICallbacks(string id)
+        {
+            switch(id)
+            {
+                case "BUTTON_START_GAME":
+                    this.Exit();
+                    break;
+            }
         }
 
         void UpdateGameState(GameStates newGameState)

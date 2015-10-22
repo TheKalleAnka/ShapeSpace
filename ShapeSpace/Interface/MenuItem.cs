@@ -6,8 +6,6 @@ using Microsoft.Xna.Framework.Graphics;
 /// </summary>
 abstract class MenuItem : IDrawable
 {
-    public delegate void MenuItemClicked();
-
     protected SpriteBatch spriteBatch;
     protected Texture2D texture;
 
