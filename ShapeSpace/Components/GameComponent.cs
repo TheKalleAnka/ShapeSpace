@@ -5,9 +5,6 @@ using System.Collections.Generic;
 
 class GameComponent : BaseComponent, IDrawable, IUpdateable, Observer, Subject
 {
-    //DRAWING
-    Camera camera;
-
     //GAMEPLAY
     Player player;
 
@@ -20,7 +17,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, Observer, Subject
 
     public void Update(GameTime gameTime)
     {
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
     }
 
     public void Draw(GameTime gameTime)

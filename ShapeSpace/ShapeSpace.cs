@@ -11,12 +11,16 @@ namespace ShapeSpace
     public class ShapeSpace : Game, Observer
     {
         GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
 
-        Camera camera;
+        GameStates gameState;
+        GameStates previousGameState;
+
+        GameComponent gc;
+        UIComponent uc;
 
         public ShapeSpace()
-        {            
+        {
+            this.IsMouseVisible = true;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
@@ -37,11 +41,12 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
-
-
-            camera = new Camera(GraphicsDevice.Viewport);
-
             base.Initialize();
+
+            gc = new GameComponent(GraphicsDevice);
+            uc = new UIComponent(GraphicsDevice);
+
+            UpdateGameState(GameStates.MAINMENU);
         }
 
         /// <summary>
@@ -50,10 +55,6 @@ namespace ShapeSpace
         /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // TODO: use this.Content to load your game content here
         }
 
         /// <summary>
@@ -72,21 +73,19 @@ namespace ShapeSpace
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            MouseState mouseState = Mouse.GetState();
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            if (mouseState.LeftButton == ButtonState.Pressed)
+                uc.OnClick(new Vector2(mouseState.X, mouseState.Y));
+
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
 
-            if (Keyboard.GetState().IsKeyDown(Keys.D))
-                camera.Position += new Vector2(10, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (Keyboard.GetState().IsKeyDown(Keys.A))
-                camera.Position += new Vector2(-10, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (Keyboard.GetState().IsKeyDown(Keys.W))
-                camera.Position += new Vector2(0, -10) * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (Keyboard.GetState().IsKeyDown(Keys.S))
-                camera.Position += new Vector2(0, 10) * (float)gameTime.ElapsedGameTime.TotalSeconds;
-
             // TODO: Add your update logic here
+            gc.Update(gameTime);
+            uc.Update(gameTime);
 
             base.Update(gameTime);
         }
@@ -97,14 +96,26 @@ namespace ShapeSpace
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Maroon);
+            GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
-            spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
-
-            spriteBatch.End();
+            gc.Draw(gameTime);
+            uc.Draw(gameTime);
 
             base.Draw(gameTime);
+        }
+
+        void UpdateGameState(GameStates newGameState)
+        {
+            //Don't bother changing game state if we are trying to change to the current one
+            if (newGameState == gameState)
+                return;
+
+            previousGameState = gameState;
+            gameState = newGameState;
+
+            gc.UpdateGameState(gameState);
+            uc.UpdateGameState(gameState);
         }
 
         protected override void OnExiting(object sender, EventArgs args)

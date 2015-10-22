@@ -44,7 +44,7 @@
   <ItemGroup>
     <Compile Include="Components\BaseComponent.cs" />
     <Compile Include="Components\GameComponent.cs" />
-    <Compile Include="Components\MenuComponent.cs" />
+    <Compile Include="Components\UIComponent.cs" />
     <Compile Include="Interfaces\Enums.cs" />
     <Compile Include="Interfaces\IDrawable.cs" />
     <Compile Include="Interfaces\IMenuClickable.cs" />

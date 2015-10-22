@@ -14,9 +14,12 @@ abstract class BaseComponent
 
     protected SpriteBatch spriteBatch;
 
+    protected Camera camera;
+
     public BaseComponent(GraphicsDevice graphicsDevice)
     {
         spriteBatch = new SpriteBatch(graphicsDevice);
+        camera = new Camera(graphicsDevice.Viewport);
     }
 
     public virtual void UpdateGameState(GameStates newGameState)

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 
-interface IMenuClickable : Subject
+interface IMenuClickable
 {
     void OnClick(Vector2 pos);
 }

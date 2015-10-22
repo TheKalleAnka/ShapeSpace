@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework.Graphics;
 
 class Button : MenuItem, IMenuClickable
 {
@@ -7,39 +8,29 @@ class Button : MenuItem, IMenuClickable
     /// The event that is sent to all observers when this button is pressed
     /// </summary>
     string buttonID { get; set; }
-    
-    public List<Observer> observers { get; set; }
 
-    public Button(Rectangle rect, Color color, string buttonID)
+    public event MenuItemClicked OnClicked;
+
+    public Button(ref SpriteBatch spriteBatch, Rectangle rect, Color color, string buttonID, string text) : base(ref spriteBatch)
     {
         this.rectangle = rect;
         this.baseColor = color;
         this.buttonID = buttonID;
+        this.text = text;
     }
 
     public override void Draw(GameTime gameTime)
     {
-        
-    }
-
-    public void AddObserver(Observer observer)
-    {
-        observers.Add(observer);
-    }
-
-    public void RemoveObserver(Observer observer)
-    {
-        observers.Remove(observer);
+        spriteBatch.Draw(texture,rectangle,baseColor);
     }
 
     public void OnClick(Vector2 pos) 
     {
         if(IsPressOnThisItem(pos))
         {
-            for (int i = 0; i < observers.Count; i++)
-            {
-                observers[i].OnNotify(this, buttonID);
-            }
+            baseColor = Color.Yellow;
+
+            OnClicked.Invoke();
         }
     }
 }

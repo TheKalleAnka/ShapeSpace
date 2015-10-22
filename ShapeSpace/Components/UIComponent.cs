@@ -2,16 +2,20 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-class MenuComponent : BaseComponent, IDrawable, IUpdateable
+class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
 {
     Menu currentMenu = null;
 
-    public MenuComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) { }
+    public UIComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) { }
 
     public void Draw(GameTime gameTime)
     {
+        spriteBatch.Begin(/*transformMatrix: camera.GetViewMatrix()*/);
+
         if (currentMenu != null)
             currentMenu.Draw(gameTime);
+
+        spriteBatch.End();
     }
 
     public void Update(GameTime gameTime)
@@ -21,6 +25,7 @@ class MenuComponent : BaseComponent, IDrawable, IUpdateable
             switch(gameState)
             {
                 case GameStates.MAINMENU:
+                    currentMenu = CreateMainMenu();
                     break;
             }
         }
@@ -33,8 +38,23 @@ class MenuComponent : BaseComponent, IDrawable, IUpdateable
         currentMenu = null;
     }
 
-    void LoadMenus()
+    void LoadMenu()
     {
         //Load the menus from a file decoupled from the script?
+    }
+
+    Menu CreateMainMenu()
+    {
+        Menu menu = new Menu();
+
+        Button item = new Button(ref spriteBatch,new Rectangle(100,100,300,50), Color.ForestGreen, "BUTTON_START_GAME", "Play");
+        menu.AddItem(item);
+
+        return menu;
+    }
+
+    public void OnClick(Vector2 pos)
+    {
+        currentMenu.OnClick(pos);
     }
 }

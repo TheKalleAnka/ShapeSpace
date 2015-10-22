@@ -1,5 +1,6 @@
 ﻿enum GameStates
 {
+    LOADING,
     PLAYING,
     PAUSED,
     MAINMENU,
