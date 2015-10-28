@@ -110,6 +110,9 @@ namespace ShapeSpace
             switch(id)
             {
                 case "BUTTON_START_GAME":
+                    UpdateGameState(GameStates.PLAYING);
+                    break;
+                case "BUTTON_QUIT_GAME":
                     this.Exit();
                     break;
             }
