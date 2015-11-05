@@ -5,11 +5,13 @@ using System;
 class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
 {
     Menu currentMenu = null;
-    UICallback callback;
+    UICallback callbackShell;
 
     public UIComponent(GraphicsDevice graphicsDevice, UICallback callback) : base(graphicsDevice) 
     {
-        this.callback = callback;
+        this.callbackShell = callback;
+
+        currentMenu = CreateMainMenu();
     }
 
     public void Draw(GameTime gameTime)
@@ -31,14 +33,14 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
     {
         base.UpdateGameState(newGameState);
 
-        currentMenu = null;
+        //currentMenu = null;
+    }
 
-        switch (gameState)
+    void LocalUICallback(string id)
+    {
+        switch(id)
         {
-            case GameStates.MAINMENU:
-                currentMenu = CreateMainMenu();
-                break;
-            case GameStates.PLAYING:
+            case "BUTTON_START_GAME":
                 currentMenu = CreatePauseMenu();
                 break;
         }
@@ -54,11 +56,12 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
         Menu menu = new Menu();
 
         Button item = new Button(ref spriteBatch,new Rectangle(100,100,200,50), Color.ForestGreen, "BUTTON_START_GAME", "Play");
-        item.Callback += callback;
+        item.Callback += callbackShell;
+        item.Callback += LocalUICallback;
         menu.AddItem(item);
 
         item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, "BUTTON_QUIT_GAME", "Quit");
-        item.Callback += callback;
+        item.Callback += callbackShell;
         menu.AddItem(item);
 
         return menu;
@@ -69,7 +72,7 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
         Menu menu = new Menu();
 
         Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, "BUTTON_RETURN_TO_PLAY", "Resume");
-        item.Callback += callback;
+        item.Callback += callbackShell;
         menu.AddItem(item);
 
         return menu;

@@ -1,46 +1,53 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using FarseerPhysics.Dynamics;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
 
-class GameComponent : BaseComponent, IDrawable, IUpdateable, Observer, Subject
+class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitializable
 {
     //GAMEPLAY
     Player player;
 
-    public List<Observer> observers { get; set; }
+    //PHYSICS
+    World physWorld;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
     {
         camera = new Camera(graphicsDevice.Viewport);//Use for spritebatch.begin
     }
 
+    public void Initialize()
+    {
+        physWorld = new World(new Vector2(10,0));
+        player = new Player(true, false, 1, spriteBatch.GraphicsDevice, new Vector2(0,0), physWorld);
+    }
+
+    public void LoadContent(ContentManager cManager)
+    {
+        player.LoadContent(cManager);
+    }
+
+    public void UnloadContent()
+    {
+        player.UnloadContent();
+    }
+
     public void Update(GameTime gameTime)
     {
-        //throw new NotImplementedException();
+        physWorld.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
+
+        if(player != null)
+            player.Update(gameTime);
     }
 
     public void Draw(GameTime gameTime)
     {
         spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
 
-        //Draw here
+        if(player != null)
+            player.Draw(ref spriteBatch);
 
         spriteBatch.End();
-    }
-
-    public void OnNotify(object caller, string eventID)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void AddObserver(Observer observer)
-    {
-        observers.Add(observer);
-    }
-
-    public void RemoveObserver(Observer observer)
-    {
-        observers.Remove(observer);
     }
 }

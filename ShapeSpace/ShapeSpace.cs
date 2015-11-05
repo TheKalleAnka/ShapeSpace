@@ -41,12 +41,14 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
-            base.Initialize();
-
             gc = new GameComponent(GraphicsDevice);
             uc = new UIComponent(GraphicsDevice, HandleUICallbacks);
 
-            UpdateGameState(GameStates.MAINMENU);
+            gc.Initialize();
+
+            UpdateGameState(GameStates.PLAYING);
+
+            base.Initialize();
         }
 
         /// <summary>
@@ -55,6 +57,8 @@ namespace ShapeSpace
         /// </summary>
         protected override void LoadContent()
         {
+            if (gc != null)
+                gc.LoadContent(Content);
         }
 
         /// <summary>
@@ -63,7 +67,8 @@ namespace ShapeSpace
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            if (gc != null)
+                gc.UnloadContent();
         }
 
         /// <summary>
@@ -82,8 +87,6 @@ namespace ShapeSpace
                 uc.OnClick(new Vector2(mouseState.X, mouseState.Y));
 
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
-
-            // TODO: Add your update logic here
             gc.Update(gameTime);
             uc.Update(gameTime);
 

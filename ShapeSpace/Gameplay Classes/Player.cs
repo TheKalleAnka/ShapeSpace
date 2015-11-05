@@ -1,9 +1,11 @@
-﻿//Physics should only affect the player if it is on the server
+﻿using System.Collections.Generic;
+//Physics should only affect the player if it is on the server
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-class Player
+class Player : ILoadable, IUpdateable
 {
     Vector2 position;
     //There is no rotation here since no players can spin!
@@ -26,6 +28,8 @@ class Player
     GraphicsDevice graphicsDevice;
     Texture2D texture;
 
+    List<Trail> trail = new List<Trail>();
+
     //PHYSICS
     Body physicsBody;
 
@@ -42,16 +46,20 @@ class Player
             physicsBody.BodyType = BodyType.Dynamic;
     }
 
-    public void LoadContent()
+    public void LoadContent(ContentManager cManager)
     {
         //Should be replaced by actual textures
         texture = new Texture2D(graphicsDevice,1,1);
         texture.SetData(new[] { Color.White });
     }
-    public void UnloadContent() { }
-    public void Update() { }
+    public void UnloadContent() 
+    {
+        texture = null;
+    }
+    public void Update(GameTime gameTime) { }
     public void Draw(ref SpriteBatch spriteBatch) 
     {
+        if(texture != null)
         spriteBatch.Draw(texture, new Rectangle((int)physicsBody.Position.X, (int)physicsBody.Position.Y, scale, scale), Color.Blue);
     }
 }
