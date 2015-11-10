@@ -54,6 +54,7 @@
     <Compile Include="Interfaces\IMenuClickable.cs" />
     <Compile Include="Interfaces\IUpdateable.cs" />
     <Compile Include="Interface\Camera.cs" />
+    <Compile Include="Network\Peer.cs" />
     <Compile Include="Observer\Observer.cs" />
     <Compile Include="Observer\Subject.cs" />
     <Compile Include="ShapeSpace.cs" />

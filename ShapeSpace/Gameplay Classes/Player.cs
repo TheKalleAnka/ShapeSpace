@@ -4,12 +4,12 @@ using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 class Player : ILoadable, IUpdateable
 {
-    Vector2 position;
     //There is no rotation here since no players can spin!
-    int scale = 100;//Should this be a Vector2 to allow different scaling in different axes?
+    public int scale = 100;//Should this be a Vector2 to allow different scaling in different axes?
     //NETWORK
     /// <summary>
     /// Determines whether this player is controlled by this client
@@ -31,7 +31,7 @@ class Player : ILoadable, IUpdateable
     List<Trail> trail = new List<Trail>();
 
     //PHYSICS
-    Body physicsBody;
+    public Body physicsBody;
 
     public Player(bool isLocal, bool isOnServer, int networkID, GraphicsDevice graphicsDevice, Vector2 position, World physicsWorld)
     {
@@ -39,27 +39,37 @@ class Player : ILoadable, IUpdateable
         this.isOnServer = isOnServer;
         this.networkID = networkID;
         this.graphicsDevice = graphicsDevice;
-        this.position = position;
 
         //if (isOnServer)
             physicsBody = new Body(physicsWorld, position);
-            physicsBody.BodyType = BodyType.Dynamic;
+            physicsBody.BodyType = BodyType.Dynamic;//Should be static if we are not on the server
+            physicsBody.FixedRotation = true;
+            physicsBody.Position = position;
     }
 
     public void LoadContent(ContentManager cManager)
     {
-        //Should be replaced by actual textures
+        //Should be replaced by actual textures?
         texture = new Texture2D(graphicsDevice,1,1);
-        texture.SetData(new[] { Color.White });
+        texture.SetData(new[] {Color.White});
     }
     public void UnloadContent() 
     {
         texture = null;
     }
-    public void Update(GameTime gameTime) { }
+    public void Update(GameTime gameTime) 
+    {
+        if (Keyboard.GetState().IsKeyDown(Keys.D))
+            physicsBody.ApplyForce(new Vector2(10,0));
+    }
     public void Draw(ref SpriteBatch spriteBatch) 
     {
         if(texture != null)
-        spriteBatch.Draw(texture, new Rectangle((int)physicsBody.Position.X, (int)physicsBody.Position.Y, scale, scale), Color.Blue);
+            spriteBatch.Draw(texture, new Rectangle((int)physicsBody.Position.X, (int)physicsBody.Position.Y, scale, scale), Color.Blue);
+    }
+
+    public Vector2 GetPosition()
+    {
+        return physicsBody.Position;
     }
 }

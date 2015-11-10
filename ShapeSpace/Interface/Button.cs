@@ -27,7 +27,7 @@ class Button : MenuItem, IMenuClickable
     public override void Draw(GameTime gameTime)
     {
         if (this.hasBeenPressed)
-            scale -= (float)gameTime.ElapsedGameTime.TotalSeconds * 5;
+            scale -= (float)gameTime.ElapsedGameTime.TotalSeconds * 10;
 
         if (scale <= 0)
         {

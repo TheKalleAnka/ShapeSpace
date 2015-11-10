@@ -8,7 +8,7 @@ namespace ShapeSpace
     /// <summary>
     /// This is the shell
     /// </summary>
-    public class ShapeSpace : Game, Observer
+    public class ShapeSpace : Game
     {
         GraphicsDeviceManager graphics;
 
@@ -23,14 +23,6 @@ namespace ShapeSpace
             this.IsMouseVisible = true;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-        }
-
-        public void OnNotify(object caller, string eventID)
-        {
-            switch(eventID)
-            {
-                
-            }
         }
 
         /// <summary>
@@ -114,9 +106,10 @@ namespace ShapeSpace
             {
                 case "BUTTON_START_GAME":
                     UpdateGameState(GameStates.PLAYING);
+                    gc.StartServer(5);
                     break;
                 case "BUTTON_QUIT_GAME":
-                    this.Exit();
+                    gc.ConnectToServer();
                     break;
             }
         }
