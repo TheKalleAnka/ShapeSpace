@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShapeSpace", "ShapeSpace\ShapeSpace.csproj", "{A07E03A3-0795-42C7-87A3-2A5325542754}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShapeSpaceServer", "ShapeSpaceServer\ShapeSpaceServer.csproj", "{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShapeSpaceHelper", "ShapeSpaceHelper\ShapeSpaceHelper.csproj", "{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +29,26 @@ Global
 		{A07E03A3-0795-42C7-87A3-2A5325542754}.Release|Mixed Platforms.Build.0 = Release|x86
 		{A07E03A3-0795-42C7-87A3-2A5325542754}.Release|x86.ActiveCfg = Release|x86
 		{A07E03A3-0795-42C7-87A3-2A5325542754}.Release|x86.Build.0 = Release|x86
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{924F8CA2-F7C9-43EC-AC34-95BE308CA7EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{D3ACB5D7-4B68-430D-9A5D-BF53BD7CE3EA}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

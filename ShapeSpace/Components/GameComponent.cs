@@ -19,7 +19,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     World physWorld;
 
     //NETWORK
-    NetServer server;
     NetClient client;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
@@ -64,41 +63,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         if(player != null)
             player.Draw(ref spriteBatch);
 
-        if (server != null)
-            spriteBatch.DrawString(font,"Connections: " + server.Connections.Count,new Vector2(-1200,-800),Color.White,0,new Vector2(0,0),10,SpriteEffects.None,0);
-
         spriteBatch.End();
-    }
-
-    /// <summary>
-    /// Starts a new server
-    /// </summary>
-    /// <param name="maxConnect">The maximum amount of clients that can join the server</param>
-    public void StartServer(int maxConnect)
-    {
-        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
-        config.Port = 55678;
-        config.MaximumConnections = maxConnect;
-        config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
-
-        bool serverStarted = true;
-
-        try
-        {
-            server = new NetServer(config);
-            server.Start();
-        }
-        catch(Exception e)
-        {
-            serverStarted = false;
-        }
-
-        if (serverStarted)
-        {
-            Thread t = new Thread(HandleServerMessages);
-            t.IsBackground = true;
-            t.Start();
-        }
     }
 
     public void ConnectToServer()
@@ -134,35 +99,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                         break;
                 }
                 client.Recycle(msg);
-                msg = null;
-            }
-        }
-    }
-
-    void HandleServerMessages()
-    {
-        while (true)
-        {
-            NetIncomingMessage msg;
-            while ((msg = server.ReadMessage()) != null)
-            {
-                switch (msg.MessageType)
-                {
-                    case NetIncomingMessageType.DiscoveryRequest:
-
-                        // Create a response and write some example data to it
-                        NetOutgoingMessage response = server.CreateMessage();
-                        response.Write("This is a great server name!");
-                        response.Write(msg.SenderEndPoint);
-
-                        // Send the response to the sender of the request
-                        server.SendDiscoveryResponse(response, msg.SenderEndPoint);
-                        break;
-                    default:
-                        //Console.WriteLine("Unhandled type: " + msg.MessageType);
-                        break;
-                }
-                server.Recycle(msg);
                 msg = null;
             }
         }

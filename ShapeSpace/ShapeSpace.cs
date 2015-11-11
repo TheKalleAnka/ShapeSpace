@@ -106,7 +106,6 @@ namespace ShapeSpace
             {
                 case "BUTTON_START_GAME":
                     UpdateGameState(GameStates.PLAYING);
-                    gc.StartServer(5);
                     break;
                 case "BUTTON_QUIT_GAME":
                     gc.ConnectToServer();
