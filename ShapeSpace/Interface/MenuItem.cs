@@ -8,7 +8,7 @@ abstract class MenuItem : IDrawable
 {
     protected SpriteBatch spriteBatch;
     protected Texture2D texture;
-
+    protected SpriteFont font;
     protected Rectangle rectangle { get; set; }
     protected Color baseColor { get; set; }
     protected Color foreColor { get; set; }

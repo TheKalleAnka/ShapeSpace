@@ -2,16 +2,28 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
+class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable, ILoadable
 {
     Menu currentMenu = null;
     UICallback callbackShell;
+
+    SpriteFont font;
 
     public UIComponent(GraphicsDevice graphicsDevice, UICallback callback) : base(graphicsDevice) 
     {
         this.callbackShell = callback;
 
         currentMenu = CreateMainMenu();
+    }
+
+    public void LoadContent(Microsoft.Xna.Framework.Content.ContentManager cManager)
+    {
+        font = cManager.Load<SpriteFont>("text");
+    }
+
+    public void UnloadContent()
+    {
+        throw new NotImplementedException();
     }
 
     public void Draw(GameTime gameTime)
@@ -55,12 +67,12 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
     {
         Menu menu = new Menu();
 
-        Button item = new Button(ref spriteBatch,new Rectangle(100,100,200,50), Color.ForestGreen, "BUTTON_START_GAME", "Play");
+        Button item = new Button(ref spriteBatch,new Rectangle(100,100,200,50), Color.ForestGreen, Color.White, font, "BUTTON_START_GAME", "Play");
         item.Callback += callbackShell;
         item.Callback += LocalUICallback;
         menu.AddItem(item);
 
-        item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, "BUTTON_QUIT_GAME", "Quit");
+        item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, Color.White, font, "BUTTON_QUIT_GAME", "Quit");
         item.Callback += callbackShell;
         menu.AddItem(item);
 
@@ -71,7 +83,7 @@ class UIComponent : BaseComponent, IDrawable, IUpdateable, IMenuClickable
     {
         Menu menu = new Menu();
 
-        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, "BUTTON_RETURN_TO_PLAY", "Resume");
+        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_RETURN_TO_PLAY", "Resume");
         item.Callback += callbackShell;
         menu.AddItem(item);
 

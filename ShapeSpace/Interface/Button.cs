@@ -15,10 +15,12 @@ class Button : MenuItem, IMenuClickable
 
     public event UICallback Callback;
 
-    public Button(ref SpriteBatch spriteBatch, Rectangle rect, Color color, string buttonID, string text) : base(ref spriteBatch)
+    public Button(ref SpriteBatch spriteBatch, Rectangle rect, Color color, Color textColor, SpriteFont font, string buttonID, string text) : base(ref spriteBatch)
     {
         this.rectangle = rect;
         this.baseColor = color;
+        this.textColor = textColor;
+        this.font = font;
         this.buttonID = buttonID;
         this.text = text;
     }

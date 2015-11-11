@@ -1,11 +1,9 @@
-﻿using System;
+﻿using System.Windows.Forms;
 using FarseerPhysics.Dynamics;
+using Lidgren.Network;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Lidgren.Network;
-using System.Threading;
-using System.Windows.Forms;
 
 /// <summary>
 /// The component that handles all things related to gameplay
@@ -14,10 +12,10 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 {
     //GAMEPLAY
     Player player;
-
+    
     //PHYSICS
     World physWorld;
-
+    
     //NETWORK
     NetClient client;
 
@@ -73,34 +71,28 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
         client = new NetClient(config);
         client.Start();
-        client.DiscoverLocalPeers(55678);
-
-        Thread t = new Thread(HandleClientMessages);
-        t.IsBackground = true;
-        t.Start();
+        client.RegisterReceivedCallback(HandleClientMessages);
+        client.Connect("127.0.0.1",55678);
     }
 
-    void HandleClientMessages()
+    void HandleClientMessages(object peer)
     {
         NetIncomingMessage msg;
-        while (client != null)
+        while((msg = client.ReadMessage()) != null)
         {
-            while((msg = client.ReadMessage()) != null)
+            switch (msg.MessageType)
             {
-                switch (msg.MessageType)
-                {
-                    case NetIncomingMessageType.DiscoveryResponse:
-                        MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
-                        
+                case NetIncomingMessageType.DiscoveryResponse:
+                    MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
+                     
+                    if(client.GetConnection(msg.SenderEndPoint) == null)
                         client.Connect(msg.SenderEndPoint);
-                        break;
-                    default:
-                        //Console.WriteLine("Unhandled type: " + msg.MessageType);
-                        break;
-                }
-                client.Recycle(msg);
-                msg = null;
+                    break;
+                default:
+                    //Console.WriteLine("Unhandled type: " + msg.MessageType);
+                    break;
             }
+            client.Recycle(msg);
         }
     }
 }

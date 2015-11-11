@@ -4,6 +4,7 @@ namespace ShapeSpaceHelper
 {
     public enum ShapeCustomNetMessageType
     {
-        
+        LocationUpdate,
+        InputUpdate
     }
 }
