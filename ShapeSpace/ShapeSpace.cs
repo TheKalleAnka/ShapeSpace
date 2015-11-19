@@ -15,6 +15,7 @@ namespace ShapeSpace
         GameStates gameState;
         GameStates previousGameState;
 
+        InputComponent ic;
         GameComponent gc;
         UIComponent uc;
 
@@ -33,6 +34,7 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
+            ic = new InputComponent();
             gc = new GameComponent(GraphicsDevice);
             uc = new UIComponent(GraphicsDevice, HandleUICallbacks);
 
@@ -79,6 +81,8 @@ namespace ShapeSpace
                 uc.OnClick(new Vector2(mouseState.X, mouseState.Y));
 
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
+            if (ic != null)
+                ic.Update(gameTime);
             gc.Update(gameTime);
             uc.Update(gameTime);
 

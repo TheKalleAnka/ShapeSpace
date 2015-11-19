@@ -42,8 +42,10 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Base\Actor.cs" />
     <Compile Include="Components\BaseComponent.cs" />
     <Compile Include="Components\GameComponent.cs" />
+    <Compile Include="Components\InputComponent.cs" />
     <Compile Include="Components\UIComponent.cs" />
     <Compile Include="Gameplay Classes\Trail.cs" />
     <Compile Include="Interfaces\Delegates.cs" />
@@ -53,16 +55,16 @@
     <Compile Include="Interfaces\ILoadable.cs" />
     <Compile Include="Interfaces\IMenuClickable.cs" />
     <Compile Include="Interfaces\IUpdateable.cs" />
-    <Compile Include="Interface\Camera.cs" />
+    <Compile Include="UI\Camera.cs" />
     <Compile Include="Network\Peer.cs" />
     <Compile Include="Observer\Observer.cs" />
     <Compile Include="Observer\Subject.cs" />
     <Compile Include="ShapeSpace.cs" />
     <Compile Include="Gameplay Classes\Player.cs" />
-    <Compile Include="Interface\Button.cs" />
-    <Compile Include="Interface\InputField.cs" />
-    <Compile Include="Interface\Menu.cs" />
-    <Compile Include="Interface\MenuItem.cs" />
+    <Compile Include="UI\Button.cs" />
+    <Compile Include="UI\InputField.cs" />
+    <Compile Include="UI\Menu.cs" />
+    <Compile Include="UI\MenuItem.cs" />
     <Compile Include="Levels\Scene.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

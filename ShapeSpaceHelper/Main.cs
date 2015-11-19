@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace ShapeSpaceHelper
 {
@@ -6,5 +7,11 @@ namespace ShapeSpaceHelper
     {
         LocationUpdate,
         InputUpdate
+    }
+
+    public struct PositionInTime
+    {
+        float Time;
+        Vector2 Position;
     }
 }
