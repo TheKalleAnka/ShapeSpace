@@ -17,7 +17,6 @@ namespace ShapeSpace
 
         InputComponent ic;
         GameComponent gc;
-        UIComponent uc;
 
         public ShapeSpace()
         {
@@ -36,7 +35,7 @@ namespace ShapeSpace
         {
             ic = new InputComponent();
             gc = new GameComponent(GraphicsDevice);
-            uc = new UIComponent(GraphicsDevice, HandleUICallbacks);
+            UIComponent.Instance.spriteBatch = new SpriteBatch(GraphicsDevice);
 
             gc.Initialize();
 
@@ -53,6 +52,8 @@ namespace ShapeSpace
         {
             if (gc != null)
                 gc.LoadContent(Content);
+
+            UIComponent.Instance.LoadContent(Content);
         }
 
         /// <summary>
@@ -78,13 +79,13 @@ namespace ShapeSpace
                 Exit();
 
             if (mouseState.LeftButton == ButtonState.Pressed)
-                uc.OnClick(new Vector2(mouseState.X, mouseState.Y));
+                UIComponent.Instance.OnClick(new Vector2(mouseState.X, mouseState.Y));
 
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
             if (ic != null)
                 ic.Update(gameTime);
             gc.Update(gameTime);
-            uc.Update(gameTime);
+            UIComponent.Instance.Update(gameTime);
 
             base.Update(gameTime);
         }
@@ -99,7 +100,7 @@ namespace ShapeSpace
 
             // TODO: Add your drawing code here
             gc.Draw(gameTime);
-            uc.Draw(gameTime);
+            UIComponent.Instance.Draw(gameTime);
 
             base.Draw(gameTime);
         }
@@ -127,7 +128,7 @@ namespace ShapeSpace
             gameState = newGameState;
 
             gc.UpdateGameState(gameState);
-            uc.UpdateGameState(gameState);
+            UIComponent.Instance.UpdateGameState(gameState);
         }
 
         protected override void OnExiting(object sender, EventArgs args)

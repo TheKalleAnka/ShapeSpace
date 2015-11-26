@@ -37,7 +37,7 @@ class InputComponent : IUpdateable
         reserveInput = null;
     }
 
-    public Vector2 GetMovementInputAsVector()
+    public static Vector2 GetMovementInputAsVector()
     {
         Vector2 vector = Vector2.Zero;
 

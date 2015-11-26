@@ -6,7 +6,7 @@ namespace ShapeSpace.UI
     /// <summary>
     /// Abstract class which all items in a menu derive from
     /// </summary>
-    abstract class MenuItem : Actor, IDrawable
+    abstract class MenuItem : IDrawable
     {
         protected SpriteBatch spriteBatch;
         protected Texture2D texture;

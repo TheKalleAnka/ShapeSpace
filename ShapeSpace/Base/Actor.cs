@@ -15,4 +15,9 @@ class Actor
     InputComponent InputComponent;
     UIComponent UIComponent;
     GameComponent GameComponent;
+
+    public Actor(ref InputComponent input, ref UIComponent ui, ref GameComponent game)
+    {
+        
+    }
 }
