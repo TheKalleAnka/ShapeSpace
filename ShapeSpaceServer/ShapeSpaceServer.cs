@@ -1,6 +1,8 @@
 ﻿using System;
 using Lidgren.Network;
-using ShapeSpaceHelper;
+using Lidgren.Network.Xna;
+using ShapeSpace.Network;
+using FarseerPhysics.Dynamics;
 
 class Program
 {
@@ -10,6 +12,7 @@ class Program
         config.Port = 55678;
         config.MaximumConnections = 10;
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
+        config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
         NetServer server = new NetServer(config);
         
@@ -19,9 +22,13 @@ class Program
         }
         catch(Exception e)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(e);
+            Console.ForegroundColor = ConsoleColor.White;
             WaitForKeyPress();
         }
+
+        Console.WriteLine("Server Started Sucessfully!");
 
         while(true)
         {
@@ -32,10 +39,26 @@ class Program
                 Console.WriteLine(msg.MessageType);
                 switch (msg.MessageType)
                 {
+                    case NetIncomingMessageType.Data:
+                        switch((ShapeCustomNetMessageType)msg.ReadByte())
+                        {
+                            case ShapeCustomNetMessageType.InputUpdate:
+                                int numOfInputs = msg.ReadInt32();
+                                for (int i = 0; i < numOfInputs; i++ )
+                                {
+                                    
+                                }
+                                    break;
+                        }
+                        break;
                     case NetIncomingMessageType.DiscoveryRequest:
                         NetOutgoingMessage response = server.CreateMessage();
                         response.Write("Name of server");
                         server.SendDiscoveryResponse(response, msg.SenderEndPoint);
+                        break;
+                    case NetIncomingMessageType.ConnectionApproval:
+                        Console.WriteLine("Recienved connection");
+                        msg.SenderConnection.Approve();
                         break;
                     case NetIncomingMessageType.StatusChanged:
                         break;

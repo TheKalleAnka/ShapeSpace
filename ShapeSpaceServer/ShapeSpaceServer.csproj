@@ -36,6 +36,10 @@
     <StartupObject>Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MonoGame.Framework, Version=3.4.0.456, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Program Files (x86)\MonoGame\v3.0\Assemblies\Windows\MonoGame.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -63,6 +67,10 @@
     <ProjectReference Include="..\ShapeSpaceHelper\ShapeSpaceHelper.csproj">
       <Project>{d3acb5d7-4b68-430d-9a5d-bf53bd7ce3ea}</Project>
       <Name>ShapeSpaceHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ShapeSpace\ShapeSpace.csproj">
+      <Project>{a07e03a3-0795-42c7-87a3-2a5325542754}</Project>
+      <Name>ShapeSpace</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

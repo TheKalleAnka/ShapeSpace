@@ -35,7 +35,9 @@ namespace ShapeSpace.UI
 
             if (scale <= 0)
             {
-                Callback(buttonID);
+                if(Callback != null)
+                    Callback(buttonID);
+
                 hasBeenPressed = false;
             }
 
@@ -45,6 +47,7 @@ namespace ShapeSpace.UI
             int sizeY = Convert.ToInt32(rectangle.Height * scale);
 
             spriteBatch.Draw(texture, new Rectangle(posX, posY, sizeX, sizeY), baseColor);
+            spriteBatch.DrawString(font, this.text, new Vector2(this.rectangle.X, this.rectangle.Y), this.textColor);
         }
 
         public void OnClick(Vector2 pos)

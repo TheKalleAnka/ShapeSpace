@@ -49,14 +49,16 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
     /// FOR DEBUGGING
     /// Any class that wants to add to this shall add a string to a List/Dictionary which gets formatted into a single string
     /// </summary>
-    string _DebugString = "Hej";
-
+    public string _DebugString = "Hej";
 
     SpriteFont font;
 
     public void LoadContent(Microsoft.Xna.Framework.Content.ContentManager cManager)
     {
         font = cManager.Load<SpriteFont>("text");
+
+        //Creates the main menu so that it displays when the game starts
+        currentMenu = CreateMainMenu();
     }
 
     public void UnloadContent()
@@ -91,32 +93,35 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
         }
     }
 
-    void LoadMenu()
+    /// <summary>
+    /// This is called by the game when it wants to show the pause menu
+    /// </summary>
+    public void ShowPauseMenu()
     {
-        //Load the menus from a file decoupled from the script?
+        currentMenu = CreatePauseMenu();
     }
 
-    ShapeSpace.UI.Menu CreateMainMenu()
+    Menu CreateMainMenu()
     {
-        ShapeSpace.UI.Menu menu = new ShapeSpace.UI.Menu();
+        Menu menu = new Menu();
 
-        ShapeSpace.UI.Button item = new ShapeSpace.UI.Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_START_GAME", "Play");
+        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_START_GAME", "Play");
         item.Callback += callbackShell;
         item.Callback += LocalUICallback;
         menu.AddItem(item);
 
-        item = new ShapeSpace.UI.Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, Color.White, font, "BUTTON_QUIT_GAME", "Quit");
+        item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, Color.White, font, "BUTTON_QUIT_GAME", "Quit");
         item.Callback += callbackShell;
         menu.AddItem(item);
 
         return menu;
     }
 
-    ShapeSpace.UI.Menu CreatePauseMenu()
+    Menu CreatePauseMenu()
     {
-        ShapeSpace.UI.Menu menu = new ShapeSpace.UI.Menu();
+        Menu menu = new Menu();
 
-        ShapeSpace.UI.Button item = new ShapeSpace.UI.Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_RETURN_TO_PLAY", "Resume");
+        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_RETURN_TO_PLAY", "Resume");
         item.Callback += callbackShell;
         menu.AddItem(item);
 

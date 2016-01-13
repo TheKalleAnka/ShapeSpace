@@ -21,9 +21,4 @@ abstract class BaseComponent
         spriteBatch = new SpriteBatch(graphicsDevice);
         camera = new Camera(graphicsDevice.Viewport);
     }
-
-    public virtual void UpdateGameState(GameStates newGameState)
-    {
-        gameState = newGameState;
-    }
 }

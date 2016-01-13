@@ -15,7 +15,6 @@ namespace ShapeSpace
         GameStates gameState;
         GameStates previousGameState;
 
-        InputComponent ic;
         GameComponent gc;
 
         public ShapeSpace()
@@ -33,7 +32,6 @@ namespace ShapeSpace
         /// </summary>
         protected override void Initialize()
         {
-            ic = new InputComponent();
             gc = new GameComponent(GraphicsDevice);
             UIComponent.Instance.spriteBatch = new SpriteBatch(GraphicsDevice);
 
@@ -73,6 +71,8 @@ namespace ShapeSpace
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            InputManager.Update(gameTime);
+
             MouseState mouseState = Mouse.GetState();
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -82,8 +82,6 @@ namespace ShapeSpace
                 UIComponent.Instance.OnClick(new Vector2(mouseState.X, mouseState.Y));
 
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
-            if (ic != null)
-                ic.Update(gameTime);
             gc.Update(gameTime);
             UIComponent.Instance.Update(gameTime);
 
@@ -113,7 +111,7 @@ namespace ShapeSpace
                     UpdateGameState(GameStates.PLAYING);
                     break;
                 case "BUTTON_QUIT_GAME":
-                    gc.ConnectToServer();
+                    gc.ConnectToServer("127.0.0.1");
                     break;
             }
         }
