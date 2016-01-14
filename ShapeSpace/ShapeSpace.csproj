@@ -54,8 +54,12 @@
     <Compile Include="Interfaces\ILoadable.cs" />
     <Compile Include="Interfaces\IMenuClickable.cs" />
     <Compile Include="Interfaces\IUpdateable.cs" />
-    <Compile Include="Network\Enums.cs" />
+    <Compile Include="Network\ShapeClass.cs" />
+    <Compile Include="Network\ShapeCustomNetMessageType.cs" />
+    <Compile Include="Network\InputWithTime.cs" />
     <Compile Include="Network\NetworkPlayer.cs" />
+    <Compile Include="Network\PositionInTime.cs" />
+    <Compile Include="Network\ShapeTeam.cs" />
     <Compile Include="UI\Camera.cs" />
     <Compile Include="Observer\Observer.cs" />
     <Compile Include="Observer\Subject.cs" />
@@ -94,10 +98,6 @@
     <ProjectReference Include="..\..\lidgren-network-gen3-master\Lidgren.Network\Lidgren.Network.csproj">
       <Project>{49ba1c69-6104-41ac-a5d8-b54fa9f696e8}</Project>
       <Name>Lidgren.Network</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ShapeSpaceHelper\ShapeSpaceHelper.csproj">
-      <Project>{d3acb5d7-4b68-430d-9a5d-bf53bd7ce3ea}</Project>
-      <Name>ShapeSpaceHelper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

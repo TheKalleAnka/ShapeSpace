@@ -90,6 +90,9 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
             case "BUTTON_START_GAME":
                 currentMenu = CreatePauseMenu();
                 break;
+            default:
+                currentMenu = null;
+                break;
         }
     }
 
@@ -112,6 +115,7 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
 
         item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, Color.White, font, "BUTTON_QUIT_GAME", "Quit");
         item.Callback += callbackShell;
+        item.Callback += LocalUICallback;
         menu.AddItem(item);
 
         return menu;

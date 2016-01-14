@@ -1,22 +1,21 @@
 ﻿using System.Collections.Generic;
-//Physics should only affect the player if it is on the server
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using ShapeSpace.Network;
 
-class Player : ILoadable, IUpdateable
+public class Player : ILoadable, IUpdateable
 {
     //GAMEPLAY
     int power = 100;
+    ShapeTeam team = ShapeTeam.UNKNOWN;
 
     //DRAWING
     GraphicsDevice graphicsDevice;
     Texture2D texture;
 
     List<Trail> trail = new List<Trail>();
-
     List<Vector2> locations;
 
     //PHYSICS
@@ -61,4 +60,14 @@ class Player : ILoadable, IUpdateable
     {
         return physicsBody.Position;
     }
+
+    public void SetTeam(ShapeTeam team)
+    {
+        this.team = team;
+    }
+    /*
+    public void SetClass(ShapeClass type)
+    {
+
+    }*/
 }

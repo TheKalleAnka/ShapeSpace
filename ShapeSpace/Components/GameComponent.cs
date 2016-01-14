@@ -6,7 +6,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using ShapeSpace.Network;
-using ShapeSpaceHelper;
 using System.Collections.Generic;
 
 /// <summary>
@@ -103,10 +102,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     {
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
-
         client = new NetClient(config);
         client.Start();
-        //Should be changed to other way of handling
+        //The received messages should be handled in a message loop in update #ThisIsTemporary
         client.RegisterReceivedCallback(HandleClientMessages);
         client.Connect(ip,55678);
     }
@@ -114,15 +112,40 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     void HandleClientMessages(object peer)
     {
         NetIncomingMessage msg;
-        while((msg = client.ReadMessage()) != null)
+        while ((msg = client.ReadMessage()) != null)
         {
             switch (msg.MessageType)
             {
                 case NetIncomingMessageType.DiscoveryResponse:
                     MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
-                     
-                    if(client.GetConnection(msg.SenderEndPoint) == null)
+
+                    if (client.GetConnection(msg.SenderEndPoint) == null)
                         client.Connect(msg.SenderEndPoint);
+                    break;
+                case NetIncomingMessageType.StatusChanged:
+                    switch ((NetConnectionStatus)msg.ReadByte())
+                    {
+                        //When connected to the server
+                        case NetConnectionStatus.Connected:
+                            //1. Handle hailmessage containing server info
+                            //To be implemented
+
+                            //2. Send client info
+                            NetOutgoingMessage outMsg = client.CreateMessage();
+                            outMsg.Write((byte)ShapeCustomNetMessageType.SetupRequest);
+                            outMsg.Write((byte)ShapeTeam.BLUE);
+                            outMsg.Write("CLASS HERE");
+                            break;
+                        //When disconnected from the server
+                        case NetConnectionStatus.Disconnected:
+                            //Contains a string of the reason for the disconnection
+                            string reason = msg.ReadString();
+                            if (string.IsNullOrEmpty(reason))
+                                MessageBox.Show("Disconnected! Reason unknown.");
+                            else
+                                MessageBox.Show("Disconnected, Reason: " + reason);
+                            break;
+                    }
                     break;
                 default:
                     //Console.WriteLine("Unhandled type: " + msg.MessageType);
@@ -132,23 +155,11 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         }
     }
 
-    void SendMessageToServer(ShapeSpace.Network.ShapeCustomNetMessageType type)
+    void SendMessageToServer(string s)
     {
         NetOutgoingMessage outmessage = client.CreateMessage();
-
-        switch(type)
-        {
-            case ShapeCustomNetMessageType.InputUpdate:
-                outmessage.Write((byte)ShapeCustomNetMessageType.InputUpdate);
-
-                outmessage.Write(inputsPendingDeparture.Count);
-                foreach(InputWithTime item in inputsPendingDeparture)
-                {
-                    outmessage.Write(item.TimeSincePrevious);
-                    outmessage.Write(item.Input);
-                }
-                break;
-        }
+        outmessage.Write(s);
+        client.SendMessage(outmessage, NetDeliveryMethod.ReliableOrdered);
     }
 
     public void UpdateGameState(GameStates newGameState)

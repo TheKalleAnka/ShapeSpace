@@ -1,13 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-/*
+﻿using Microsoft.Xna.Framework;
+using FarseerPhysics.Dynamics;
+using Lidgren.Network;
+
 namespace ShapeSpace.Network
 {
-    class NetworkPlayer : Player
+    public class NetworkPlayer : Player
     {
+        public NetConnection netConnection { get; private set; }
+
+        public NetworkPlayer(World world, NetConnection connection) : base(null,Vector2.Zero,world)
+        {
+            netConnection = connection;
+        }
     }
 }
-*/

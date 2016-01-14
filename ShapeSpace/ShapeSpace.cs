@@ -1,4 +1,5 @@
 ﻿using System;
+using ShapeSpace.Network;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -17,6 +18,8 @@ namespace ShapeSpace
 
         GameComponent gc;
 
+        
+
         public ShapeSpace()
         {
             this.IsMouseVisible = true;
@@ -33,7 +36,9 @@ namespace ShapeSpace
         protected override void Initialize()
         {
             gc = new GameComponent(GraphicsDevice);
+
             UIComponent.Instance.spriteBatch = new SpriteBatch(GraphicsDevice);
+            UIComponent.Instance.callbackShell = HandleUICallbacks;
 
             gc.Initialize();
 
@@ -108,10 +113,10 @@ namespace ShapeSpace
             switch(id)
             {
                 case "BUTTON_START_GAME":
-                    UpdateGameState(GameStates.PLAYING);
+                    gc.ConnectToServer("127.0.0.1");
                     break;
                 case "BUTTON_QUIT_GAME":
-                    gc.ConnectToServer("127.0.0.1");
+                    this.Exit();
                     break;
             }
         }

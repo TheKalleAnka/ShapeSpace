@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 
 namespace ShapeSpace.Network
 {
+    /// <summary>
+    /// The custom message types for data messages sent by the game
+    /// </summary>
     public enum ShapeCustomNetMessageType
     {
-        ConnectionRequest,
-        ConnectionSuccessful,
-        ConnectionFailed,
+        SetupRequest,
+        SetupSuccessful,
+        SetupFailed,
         LocationUpdate,
         InputUpdate
     }
