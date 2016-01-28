@@ -39,7 +39,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     public void Initialize()
     {
         physWorld = new World(new Vector2(0,0));
-        player = new Player(spriteBatch.GraphicsDevice, new Vector2(0,0), physWorld);
+        player = new Player(spriteBatch.GraphicsDevice);
     }
 
     SpriteFont font;
@@ -59,20 +59,30 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     {
         //Handle inputs
         Vector2 vector = InputManager.GetMovementInputAsVector();
-        /*
-        timeSinceLastAddedInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        if(vector != inputsPendingDeparture[inputsPendingDeparture.Count - 1].Input)
+        if(client != null)
         {
-            inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
-        }
+            timeSinceLastAddedInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        if ((sendTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) >= 1 / sentInputPackagesPerSecond)
-        {
-            //SEND THE INPUTS TO THE SERVER
+            if (inputsPendingDeparture.Count > 1)
+                if (inputsPendingDeparture[inputsPendingDeparture.Count - 1].Input != vector)
+                    inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
+
+            if ((sendTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
+            {
+                NetOutgoingMessage outInput = client.CreateMessage();
+                outInput.Write((byte)ShapeCustomNetMessageType.InputUpdate);
+                outInput.Write(inputsPendingDeparture.Count);
+
+                for (int i = 0; i < inputsPendingDeparture.Count; i++)
+                {
+                    outInput.Write(inputsPendingDeparture[i].Input);
+                    outInput.Write(inputsPendingDeparture[i].TimeSincePrevious);
+                }
+
+                client.SendMessage(outInput, NetDeliveryMethod.ReliableOrdered);
+            }
         }
-        */
-        physWorld.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
 
         if(player != null)
             player.Update(gameTime);
@@ -134,7 +144,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             NetOutgoingMessage outMsg = client.CreateMessage();
                             outMsg.Write((byte)ShapeCustomNetMessageType.SetupRequest);
                             outMsg.Write((byte)ShapeTeam.BLUE);
-                            outMsg.Write("CLASS HERE");
+                            outMsg.Write("UserName");
+                            client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
                             break;
                         //When disconnected from the server
                         case NetConnectionStatus.Disconnected:

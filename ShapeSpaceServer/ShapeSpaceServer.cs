@@ -4,6 +4,7 @@ using Lidgren.Network.Xna;
 using ShapeSpace.Network;
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
+using FarseerPhysics.Factories;
 
 class Program
 {
@@ -15,9 +16,17 @@ class Program
 
     static void Main(string[] args)
     {
+        int loopStartTime = 0;
+        int loopEndTime = 0;
+        float deltaSecond = 0;
+
+        const float ReturnDataTime = 1f / 10f;
+        float dataSentTimer = 0;
+
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
         config.MaximumConnections = maxPlayers;
+        config.ConnectionTimeout = 10;
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
@@ -39,13 +48,20 @@ class Program
 
         Console.WriteLine("Server Started Sucessfully!");
 
+        //Main program loop
         while(true)
         {
-            //Message handling loop
+            deltaSecond = (loopEndTime - loopStartTime) * 1000f;
+
+            dataSentTimer += deltaSecond;
+
+            loopStartTime = DateTime.Now.Millisecond;
+
+            //Handle incoming messages
             NetIncomingMessage msg;
             while ((msg = server.ReadMessage()) != null)
             {
-                Console.WriteLine(msg.MessageType);
+                //Console.WriteLine(msg.MessageType);
                 switch (msg.MessageType)
                 {
                     case NetIncomingMessageType.Data:
@@ -53,30 +69,43 @@ class Program
                         switch((ShapeCustomNetMessageType)msg.ReadByte())
                         {
                             case ShapeCustomNetMessageType.InputUpdate:
+                                //Console.WriteLine("Recieved input");
                                 int numOfInputs = msg.ReadInt32();
+
+                                int playerIndex = FindPlayerByNetConnection(msg.SenderConnection).PlayerIndex;
+
                                 for (int i = 0; i < numOfInputs; i++ )
                                 {
-                                    
+                                    Vector2 input = msg.ReadVector2();
+                                    float time = msg.ReadFloat();
+                                    connectedPlayers[playerIndex].inputs.Add(new InputWithTime(time, input));
                                 }
                                 break;
                             case ShapeCustomNetMessageType.SetupRequest:
-                                NetworkPlayer newPlayer = new NetworkPlayer(physicsWorld, msg.SenderConnection);
-                                
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
 
+                                NetworkPlayer newPlayer = new NetworkPlayer(physicsWorld, msg.SenderConnection, Vector2.Zero);
+                                
                                 try
                                 {
                                     newPlayer.SetTeam((ShapeTeam)msg.ReadByte());
+                                    newPlayer.SetUserName(msg.ReadString());
+
+                                    int spot = AddNewPlayer(newPlayer);
+
+                                    newPlayer.PlayerIndex = spot;
                                 }
                                 catch(Exception e)
                                 {
                                     returnMessage.Write((byte)ShapeCustomNetMessageType.SetupFailed);
                                     returnMessage.Write(e.Message);
-                                    server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableUnordered);
+                                    server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableOrdered);
                                     break;
                                 }
                                 returnMessage.Write((byte)ShapeCustomNetMessageType.SetupSuccessful);
                                 server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableUnordered);
+
+                                Console.WriteLine("Player connected");
                                 break;
                         }
                         break;
@@ -86,11 +115,17 @@ class Program
                         server.SendDiscoveryResponse(response, msg.SenderEndPoint);
                         break;
                     case NetIncomingMessageType.ConnectionApproval:
-                        Console.WriteLine("Recieved connection");
+                        Console.WriteLine("A client is asking to connect");
                         //Approve the connection and send back a hailmessage containing server info back
                         msg.SenderConnection.Approve();
                         break;
                     case NetIncomingMessageType.StatusChanged:
+                        if(msg.ReadByte() == (byte)NetConnectionStatus.Disconnected)
+                        {
+                            Console.WriteLine("Player disconnected: " + FindPlayerByNetConnection(msg.SenderConnection).Username);
+
+                            RemovePlayer(msg.SenderConnection);
+                        }
                         break;
                     default:
                         Console.WriteLine("Unhandled type: " + msg.MessageType + " Info: \"" + msg.ReadString() + "\"");
@@ -98,6 +133,26 @@ class Program
                 }
                 server.Recycle(msg);
             }
+
+            //Move players
+
+
+            //Simulate the world
+            physicsWorld.Step(0.1f);
+
+            //Return data to clients
+            if(dataSentTimer > ReturnDataTime)
+            {
+                for(int i = 0; i < maxPlayers; i++)
+                {
+                    if(connectedPlayers[i] != null)
+                    {
+                        
+                    }
+                }
+            }
+
+            loopEndTime = DateTime.Now.Millisecond;
         }
     }
 
@@ -108,22 +163,31 @@ class Program
     }
 
     //Called when a player connects
-    static void AddNewPlayer(NetworkPlayer player)
+    static int AddNewPlayer(NetworkPlayer player)
     {
-        connectedPlayers[FindNextEmptySpot()] = player;
+        int spotAssignedInList = FindNextEmptySpot();
+
+        connectedPlayers[spotAssignedInList] = player;
 
         connectedPlayersActual += 1;
+
+        Console.WriteLine("Added Player");
+
+        return spotAssignedInList;
     }
 
     //Called when a player disconnects
-    static void RemovePlayer(NetworkPlayer player)
+    static void RemovePlayer(NetConnection connection)
     {
         for (int i = 0; i < maxPlayers; i++ )
         {
-            if (connectedPlayers[i] == player)
+            if(connectedPlayers[i] != null)
             {
-                connectedPlayers[i] = null;
-                connectedPlayersActual -= 1;
+                if (connectedPlayers[i].netConnection == connection)
+                {
+                    connectedPlayers[i] = null;
+                    connectedPlayersActual -= 1;
+                }
             }
         }
     }
@@ -145,5 +209,21 @@ class Program
     static void SendMessageToPlayer(NetworkPlayer player)
     {
         
+    }
+
+    static NetworkPlayer FindPlayerByNetConnection(NetConnection con)
+    {
+        for (int i = 0; i < maxPlayers; i++ )
+        {
+            if(connectedPlayers[i] != null)
+            {
+                if(connectedPlayers[i].netConnection == con)
+                {
+                    return connectedPlayers[i];
+                }
+            }
+        }
+        
+        return null;
     }
 }

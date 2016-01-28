@@ -2,7 +2,7 @@
 
 namespace ShapeSpace.Network
 {
-    public struct PositionInTime
+    public class PositionInTime
     {
         public float Time;
         public Vector2 Position;

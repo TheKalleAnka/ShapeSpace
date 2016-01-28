@@ -2,7 +2,7 @@
 
 namespace ShapeSpace.Network
 {
-    public struct InputWithTime
+    public class InputWithTime
     {
         public float TimeSincePrevious;
         public Vector2 Input;
