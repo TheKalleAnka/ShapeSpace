@@ -6,5 +6,10 @@ namespace ShapeSpace.Network
     {
         public float Time;
         public Vector2 Position;
+
+        public PositionInTime(float time, Vector2 pos)
+        {
+
+        }
     }
 }

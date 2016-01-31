@@ -16,9 +16,9 @@ public class Player : ILoadable, IUpdateable
     Texture2D texture;
 
     List<Trail> trail = new List<Trail>();
-    List<PositionInTime> positions = new List<PositionInTime>();
+    public List<PositionInTime> positions = new List<PositionInTime>();
 
-    Vector2 positionNow = Vector2.Zero;
+    Vector2 positionNow = new Vector2(100,100);
     Vector2 targetPosition = Vector2.Zero;
     float lastChangedTargetPosition = 0;
     float changeTargetPositionTime = 0;
@@ -50,11 +50,11 @@ public class Player : ILoadable, IUpdateable
 
         lastChangedTargetPosition += (float)gameTime.ElapsedGameTime.Seconds;
 
-        //Move the player to a new position along a lerp between the current and the target position
-        positionNow = Vector2.Lerp(positionNow, targetPosition, MathHelper.Clamp(lastChangedTargetPosition / changeTargetPositionTime, 0, 1));
-
         if(positions.Count > 0)
         {
+            //Move the player to a new position along a lerp between the current and the target position
+            positionNow = Vector2.Lerp(positionNow, targetPosition, MathHelper.Clamp(lastChangedTargetPosition / changeTargetPositionTime, 0, 1));
+
             if(lastChangedTargetPosition >= changeTargetPositionTime)
             {
                 targetPosition = positions[0].Position;

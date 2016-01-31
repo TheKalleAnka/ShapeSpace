@@ -51,11 +51,11 @@ class Program
         //Main program loop
         while(true)
         {
-            deltaSecond = (loopEndTime - loopStartTime) * 1000f;
+            deltaSecond = (loopEndTime - loopStartTime) / 1000f;
 
             dataSentTimer += deltaSecond;
 
-            loopStartTime = DateTime.Now.Millisecond;
+            loopStartTime = Environment.TickCount;
 
             //Handle incoming messages
             NetIncomingMessage msg;
@@ -79,6 +79,9 @@ class Program
                                     Vector2 input = msg.ReadVector2();
                                     float time = msg.ReadFloat();
                                     connectedPlayers[playerIndex].inputs.Add(new InputWithTime(time, input));
+
+                                    //Console.WriteLine(input.ToString());
+                                    //Console.WriteLine(time);
                                 }
                                 break;
                             case ShapeCustomNetMessageType.SetupRequest:
@@ -135,31 +138,51 @@ class Program
             }
 
             //Move players
-
+            UpdatePlayers(deltaSecond);
 
             //Simulate the world
             physicsWorld.Step(0.1f);
 
-            //Return data to clients
-            if(dataSentTimer > ReturnDataTime)
+            for (int i = 0; i < maxPlayers; i++ )
             {
-                for(int i = 0; i < maxPlayers; i++)
+                if (connectedPlayers[i] != null)
+                    connectedPlayers[i].positions.Add(new PositionInTime(deltaSecond, connectedPlayers[i].body.Position));
+            }
+
+            //Return data to clients
+            if (dataSentTimer > ReturnDataTime)
+            {
+                for (int i = 0; i < maxPlayers; i++)
                 {
-                    if(connectedPlayers[i] != null)
+                    if (connectedPlayers[i] != null)
                     {
-                        
+                        NetOutgoingMessage outMess = server.CreateMessage();
+                        outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
+                        outMess.Write(connectedPlayers[i].positions.Count);
+
+                        for (int j = 0; j < connectedPlayers[i].positions.Count; j++ )
+                        {
+                            outMess.Write(connectedPlayers[i].positions[j].Time);
+                            Console.WriteLine(connectedPlayers[i].positions[j].Position);
+                            outMess.Write(connectedPlayers[i].positions[j].Position);
+                        }
+
+                        server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.ReliableOrdered);
                     }
                 }
             }
 
-            loopEndTime = DateTime.Now.Millisecond;
+            loopEndTime = Environment.TickCount;
         }
     }
 
-    static void WaitForKeyPress()
+    static void UpdatePlayers(float deltaTime)
     {
-        Console.Write("Press any key to continue...");
-        Console.ReadKey(true);
+        for(int i = 0; i < maxPlayers; i++)
+        {
+            if (connectedPlayers[i] != null)
+                connectedPlayers[i].Update(deltaTime);
+        }
     }
 
     //Called when a player connects
@@ -206,11 +229,6 @@ class Program
         return -1;
     }
 
-    static void SendMessageToPlayer(NetworkPlayer player)
-    {
-        
-    }
-
     static NetworkPlayer FindPlayerByNetConnection(NetConnection con)
     {
         for (int i = 0; i < maxPlayers; i++ )
@@ -225,5 +243,11 @@ class Program
         }
         
         return null;
+    }
+
+    static void WaitForKeyPress()
+    {
+        Console.Write("Press any key to continue...");
+        Console.ReadKey(true);
     }
 }

@@ -24,7 +24,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     //When this reaches the desired value, an input package will be sent to the server
     float sendTimer = 0;
     //Number of times every second that the game will send the current inputs to the server
-    const float sentInputPackagesPerSecond = 20;
+    const float sentInputPackagesPerSecond = 1;
 
     //Contains all the movement inputs that have been registered since last sending an input package
     List<InputWithTime> inputsPendingDeparture = new List<InputWithTime>();
@@ -59,14 +59,25 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     {
         //Handle inputs
         Vector2 vector = InputManager.GetMovementInputAsVector();
-
+        UIComponent.Instance._DebugString = vector.ToString();
         if(client != null)
         {
             timeSinceLastAddedInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+            /*
             if (inputsPendingDeparture.Count > 1)
+            {
                 if (inputsPendingDeparture[inputsPendingDeparture.Count - 1].Input != vector)
                     inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
+            }
+            else
+            {
+                inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
+            }
+            */
+
+            inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
+            timeSinceLastAddedInput = 0;
 
             if ((sendTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
             {
@@ -81,6 +92,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                 }
 
                 client.SendMessage(outInput, NetDeliveryMethod.ReliableOrdered);
+
+                sendTimer = 0;
             }
         }
 
@@ -126,6 +139,22 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         {
             switch (msg.MessageType)
             {
+                case NetIncomingMessageType.Data:
+                    switch((ShapeCustomNetMessageType)msg.ReadByte())
+                    {
+                        case ShapeCustomNetMessageType.LocationUpdate:
+                            int numOfPos = msg.ReadInt32();
+
+                            for (int i = 0; i < numOfPos; i++ )
+                            {
+                                float time = msg.ReadFloat();
+                                Vector2 vector = msg.ReadVector2();
+
+                                player.positions.Add(new PositionInTime(time, vector));
+                            }
+                            break;
+                    }
+                    break;
                 case NetIncomingMessageType.DiscoveryResponse:
                     MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
 

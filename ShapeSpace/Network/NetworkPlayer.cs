@@ -38,16 +38,18 @@ namespace ShapeSpace.Network
             body.CreateFixture(s);
         }
 
-        public void Update(float loopTime)
+        public void Update(float deltaTime)
         {
-            lastChangedInput += loopTime;
+            lastChangedInput += deltaTime;
 
             if(inputs.Count > 1)
-                if(lastChangedInput >= inputs[1].TimeSincePrevious)
+            {
+                if (lastChangedInput >= inputs[1].TimeSincePrevious)
                 {
                     inputs.RemoveAt(0);
                     lastChangedInput = 0;
                 }
+            }
 
             if(inputs.Count > 0)
                 body.ApplyForce(inputs[0].Input * 5f);
