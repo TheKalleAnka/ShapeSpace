@@ -40,6 +40,7 @@ namespace ShapeSpace.Network
 
         public void Update(float deltaTime)
         {
+            /*
             lastChangedInput += deltaTime;
 
             if(inputs.Count > 1)
@@ -50,6 +51,13 @@ namespace ShapeSpace.Network
                     lastChangedInput = 0;
                 }
             }
+
+            if(inputs.Count > 0)
+                body.ApplyForce(inputs[0].Input * 5f);
+             */
+
+            if (inputs.Count > 1)
+                inputs.RemoveAt(0);
 
             if(inputs.Count > 0)
                 body.ApplyForce(inputs[0].Input * 5f);

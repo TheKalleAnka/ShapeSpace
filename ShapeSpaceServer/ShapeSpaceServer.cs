@@ -143,11 +143,14 @@ class Program
             //Simulate the world
             physicsWorld.Step(0.1f);
 
+            /*
+            //Add current positions to an array which will be sent back to the client
             for (int i = 0; i < maxPlayers; i++ )
             {
                 if (connectedPlayers[i] != null)
                     connectedPlayers[i].positions.Add(new PositionInTime(deltaSecond, connectedPlayers[i].body.Position));
             }
+            */
 
             //Return data to clients
             if (dataSentTimer > ReturnDataTime)
@@ -158,6 +161,7 @@ class Program
                     {
                         NetOutgoingMessage outMess = server.CreateMessage();
                         outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
+                        /*
                         outMess.Write(connectedPlayers[i].positions.Count);
 
                         for (int j = 0; j < connectedPlayers[i].positions.Count; j++ )
@@ -166,7 +170,9 @@ class Program
                             Console.WriteLine(connectedPlayers[i].positions[j].Position);
                             outMess.Write(connectedPlayers[i].positions[j].Position);
                         }
+                        */
 
+                        outMess.Write(connectedPlayers[i].body.Position);
                         server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.ReliableOrdered);
                     }
                 }

@@ -49,7 +49,7 @@ public class Player : ILoadable, IUpdateable
         //UIComponent.Instance._DebugString = physicsBody.LinearVelocity.ToString();
 
         lastChangedTargetPosition += (float)gameTime.ElapsedGameTime.Seconds;
-
+        /*
         if(positions.Count > 0)
         {
             //Move the player to a new position along a lerp between the current and the target position
@@ -63,7 +63,12 @@ public class Player : ILoadable, IUpdateable
                 lastChangedTargetPosition = 0;
                 positions.RemoveAt(0);
             }
-        }
+        }*/
+
+        if (positions.Count > 1)
+            positions.RemoveAt(0);
+        if (positions.Count > 0)
+            positionNow = targetPosition;
     }
 
     public void Draw(ref SpriteBatch spriteBatch) 

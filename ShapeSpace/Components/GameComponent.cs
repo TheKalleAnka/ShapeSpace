@@ -1,5 +1,4 @@
 ﻿using System.Windows.Forms;
-using FarseerPhysics.Dynamics;
 using Lidgren.Network;
 using Lidgren.Network.Xna;
 using Microsoft.Xna.Framework;
@@ -17,7 +16,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     Player player;
     
     //PHYSICS
-    World physWorld;
     
     //NETWORK
     NetClient client;
@@ -38,7 +36,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
     public void Initialize()
     {
-        physWorld = new World(new Vector2(0,0));
         player = new Player(spriteBatch.GraphicsDevice);
     }
 
@@ -74,21 +71,22 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             {
                 inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
             }
-            */
+           
 
             inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
             timeSinceLastAddedInput = 0;
-
+            */
+              
             if ((sendTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
             {
                 NetOutgoingMessage outInput = client.CreateMessage();
                 outInput.Write((byte)ShapeCustomNetMessageType.InputUpdate);
-                outInput.Write(inputsPendingDeparture.Count);
+                outInput.Write(1/*inputsPendingDeparture.Count*/);
 
                 for (int i = 0; i < inputsPendingDeparture.Count; i++)
                 {
-                    outInput.Write(inputsPendingDeparture[i].Input);
-                    outInput.Write(inputsPendingDeparture[i].TimeSincePrevious);
+                    outInput.Write(InputManager.GetMovementInputAsVector()/*inputsPendingDeparture[i].Input*/);
+                    outInput.Write(0/*inputsPendingDeparture[i].TimeSincePrevious*/);
                 }
 
                 client.SendMessage(outInput, NetDeliveryMethod.ReliableOrdered);
@@ -143,14 +141,14 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                     switch((ShapeCustomNetMessageType)msg.ReadByte())
                     {
                         case ShapeCustomNetMessageType.LocationUpdate:
-                            int numOfPos = msg.ReadInt32();
+                            int numOfPos = /*msg.ReadInt32()*/1;
 
                             for (int i = 0; i < numOfPos; i++ )
                             {
-                                float time = msg.ReadFloat();
+                                //float time = msg.ReadFloat();
                                 Vector2 vector = msg.ReadVector2();
 
-                                player.positions.Add(new PositionInTime(time, vector));
+                                player.positions.Add(new PositionInTime(/*time*/0, vector));
                             }
                             break;
                     }
