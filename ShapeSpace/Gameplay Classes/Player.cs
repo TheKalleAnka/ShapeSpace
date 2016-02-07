@@ -16,15 +16,13 @@ public class Player : ILoadable, IUpdateable
     Texture2D texture;
 
     List<Trail> trail = new List<Trail>();
+
     public List<PositionInTime> positions = new List<PositionInTime>();
+    float lastChangedPosition = 0;
 
-    Vector2 positionNow = new Vector2(100,100);
-    Vector2 targetPosition = Vector2.Zero;
-    float lastChangedTargetPosition = 0;
-    float changeTargetPositionTime = 0;
 
-    //PHYSICS
-    public Body physicsBody { get; private set; }
+    public Vector2 positionNow = new Vector2();
+
 
     public Player(GraphicsDevice graphicsDevice)
     {
@@ -45,35 +43,21 @@ public class Player : ILoadable, IUpdateable
 
     public void Update(GameTime gameTime) 
     {
-        //For debugging
-        //UIComponent.Instance._DebugString = physicsBody.LinearVelocity.ToString();
-
-        lastChangedTargetPosition += (float)gameTime.ElapsedGameTime.Seconds;
-        /*
-        if(positions.Count > 0)
-        {
-            //Move the player to a new position along a lerp between the current and the target position
-            positionNow = Vector2.Lerp(positionNow, targetPosition, MathHelper.Clamp(lastChangedTargetPosition / changeTargetPositionTime, 0, 1));
-
-            if(lastChangedTargetPosition >= changeTargetPositionTime)
+        //Remove the first occurence if it has overlived it's time
+        if (positions.Count >= 2)
+            if (lastChangedPosition >= positions[1].TimeSincePrevious)
             {
-                targetPosition = positions[0].Position;
-                changeTargetPositionTime = positions[0].Time;
-
-                lastChangedTargetPosition = 0;
                 positions.RemoveAt(0);
-            }
-        }*/
 
-        if (positions.Count > 1)
-            positions.RemoveRange(0, positions.Count - 1);
-        if (positions.Count > 0)
-            positionNow = positions[0].Position;
+                lastChangedPosition = 0;
+
+                UIComponent.Instance._DebugString += positions.Count + "  " + positions[0].Position;
+            }
     }
 
     public void Draw(ref SpriteBatch spriteBatch) 
     {
-        if(texture != null)
+        if(texture != null && positions.Count > 0)
             spriteBatch.Draw(texture, new Rectangle((int)positionNow.X, (int)positionNow.Y, power, power), Color.ForestGreen);
     }
 

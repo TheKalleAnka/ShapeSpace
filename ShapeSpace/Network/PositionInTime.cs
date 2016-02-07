@@ -4,7 +4,7 @@ namespace ShapeSpace.Network
 {
     public class PositionInTime
     {
-        public float Time;
+        public float TimeSincePrevious;
         public Vector2 Position;
 
         public PositionInTime(float time, Vector2 pos)

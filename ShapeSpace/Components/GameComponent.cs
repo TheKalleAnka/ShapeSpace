@@ -20,14 +20,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     //NETWORK
     NetClient client;
     //When this reaches the desired value, an input package will be sent to the server
-    float sendTimer = 0;
+    float lastSentInput = 0;
     //Number of times every second that the game will send the current inputs to the server
-    const float sentInputPackagesPerSecond = 1;
-
-    //Contains all the movement inputs that have been registered since last sending an input package
-    List<InputWithTime> inputsPendingDeparture = new List<InputWithTime>();
-    //Keeps check of the time since an input was last added to the pending inputs list
-    float timeSinceLastAddedInput = 0;
+    const float sentInputPackagesPerSecond = 50;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
     {
@@ -57,48 +52,19 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         //Handle inputs
         Vector2 vector = InputManager.GetMovementInputAsVector();
         UIComponent.Instance._DebugString = vector.ToString();
-        if(client != null)
+
+        lastSentInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        //If it is time to send a package of inputs
+        if(lastSentInput >= 1f/sentInputPackagesPerSecond && client != null)
         {
-            timeSinceLastAddedInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            NetOutgoingMessage outMessage = client.CreateMessage();
+            outMessage.Write((byte)ShapeCustomNetMessageType.InputUpdate);
+            outMessage.Write(lastSentInput);
+            outMessage.Write(InputManager.GetMovementInputAsVector());
+            client.SendMessage(outMessage, NetDeliveryMethod.ReliableOrdered);
 
-            /*
-            if (inputsPendingDeparture.Count > 1)
-            {
-                if (inputsPendingDeparture[inputsPendingDeparture.Count - 1].Input != vector)
-                    inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
-            }
-            else
-            {
-                inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
-            }
-           
-
-            inputsPendingDeparture.Add(new InputWithTime(timeSinceLastAddedInput, vector));
-            timeSinceLastAddedInput = 0;
-            */
-              
-            if ((sendTimer += (float)gameTime.ElapsedGameTime.Seconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
-            {
-                NetOutgoingMessage outInput = client.CreateMessage();
-                outInput.Write((byte)ShapeCustomNetMessageType.InputUpdate);
-
-                /*
-                outInput.Write(inputsPendingDeparture.Count);
-
-                for (int i = 0; i < inputsPendingDeparture.Count; i++)
-                {
-                    outInput.Write(inputsPendingDeparture[i].Input);
-                    outInput.Write(inputsPendingDeparture[i].TimeSincePrevious);
-                }
-                */
-
-                outInput.Write(InputManager.GetMovementInputAsVector());
-                outInput.Write(timeSinceLastAddedInput);
-
-                client.SendMessage(outInput, NetDeliveryMethod.ReliableOrdered);
-
-                sendTimer = 0;
-            }
+            lastSentInput = 0;
         }
 
         if(player != null)
@@ -147,19 +113,13 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                     switch((ShapeCustomNetMessageType)msg.ReadByte())
                     {
                         case ShapeCustomNetMessageType.LocationUpdate:
-                            /*
-                            int numOfPos = msg.ReadInt32();
+                            float time = msg.ReadFloat();
+                            Vector2 pos = msg.ReadVector2();
 
-                            for (int i = 0; i < numOfPos; i++ )
-                            {
-                                float time = msg.ReadFloat();
-                                Vector2 vector = msg.ReadVector2();
+                            player.positions.Add(new PositionInTime(time,pos));
 
-                                player.positions.Add(new PositionInTime(time, vector));
-                            }
-                            */
-                            Vector2 vector = msg.ReadVector2();
-                            player.positions.Add(new PositionInTime(0, vector));
+                            player.positionNow = pos;
+
                             break;
                     }
                     break;

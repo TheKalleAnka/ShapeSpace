@@ -18,7 +18,7 @@ namespace ShapeSpace.Network
 
         public Body body;
 
-        public NetworkPlayer(World world, NetConnection connection, Vector2 position) : base(null)
+        public NetworkPlayer(ref World world, NetConnection connection, Vector2 position) : base(null)
         {
             netConnection = connection;
 
@@ -40,28 +40,18 @@ namespace ShapeSpace.Network
 
         public void Update(float deltaTime)
         {
-            /*
             lastChangedInput += deltaTime;
 
-            if(inputs.Count > 1)
-            {
+            //Remove the first occurence if it has overlived it's time
+            if (inputs.Count >= 2)
                 if (lastChangedInput >= inputs[1].TimeSincePrevious)
-                {
                     inputs.RemoveAt(0);
-                    lastChangedInput = 0;
-                }
-            }
 
-            if(inputs.Count > 0)
-                body.ApplyForce(inputs[0].Input * 5f);
-             */
+            if (inputs.Count >= 1)
+                //body.Position += inputs[0].Input;
+                body.ApplyForce(inputs[0].Input * 100f);
 
-            if (inputs.Count > 1)
-                inputs.RemoveRange(0,inputs.Count - 1);
-
-            if(inputs.Count > 0)
-                body.Position += inputs[0].Input;
-                //body.ApplyForce(inputs[0].Input * 0.01f);
+            System.Console.WriteLine(body.LinearVelocity);
         }
 
         public void SetUserName(string name)

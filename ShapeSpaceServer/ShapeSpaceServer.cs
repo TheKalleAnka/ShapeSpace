@@ -5,6 +5,7 @@ using ShapeSpace.Network;
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using FarseerPhysics.Factories;
+using System.Threading;
 
 class Program
 {
@@ -20,8 +21,9 @@ class Program
         int loopEndTime = 0;
         float deltaSecond = 0;
 
-        const float ReturnDataTime = 1f / 10f;
-        float dataSentTimer = 0;
+        //Frequency to return data
+        const float ReturnDataPerSecond = 20;
+        float lastSentData = 0;
 
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
@@ -53,7 +55,7 @@ class Program
         {
             deltaSecond = (loopEndTime - loopStartTime) / 1000f;
 
-            dataSentTimer += deltaSecond;
+            lastSentData += deltaSecond;
 
             loopStartTime = Environment.TickCount;
 
@@ -69,31 +71,17 @@ class Program
                         switch((ShapeCustomNetMessageType)msg.ReadByte())
                         {
                             case ShapeCustomNetMessageType.InputUpdate:
-                                //Console.WriteLine("Recieved input");
-                                //int numOfInputs = msg.ReadInt32();
-
-                                int playerIndex = FindPlayerByNetConnection(msg.SenderConnection).PlayerIndex;
-                                /*
-                                for (int i = 0; i < numOfInputs; i++ )
-                                {
-                                    Vector2 input = msg.ReadVector2();
-                                    float time = msg.ReadFloat();
-                                    connectedPlayers[playerIndex].inputs.Add(new InputWithTime(time, input));
-
-                                    //Console.WriteLine(input.ToString());
-                                    //Console.WriteLine(time);
-                                }
-                                */
-
+                                float timeSinceLast = msg.ReadFloat();
                                 Vector2 input = msg.ReadVector2();
-                                float time = msg.ReadFloat();
-                                connectedPlayers[playerIndex].inputs.Add(new InputWithTime(time, input));
 
+                                connectedPlayers[FindPlayerByNetConnection(msg.SenderConnection).PlayerIndex].inputs.Add(new InputWithTime(timeSinceLast,input));
+
+                                //Console.WriteLine(timeSinceLast + ": " + input.ToString());
                                 break;
                             case ShapeCustomNetMessageType.SetupRequest:
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
 
-                                NetworkPlayer newPlayer = new NetworkPlayer(physicsWorld, msg.SenderConnection, Vector2.Zero);
+                                NetworkPlayer newPlayer = new NetworkPlayer(ref physicsWorld, msg.SenderConnection, new Vector2(100,100));
                                 
                                 try
                                 {
@@ -147,43 +135,30 @@ class Program
             UpdatePlayers(deltaSecond);
 
             //Simulate the world
-            physicsWorld.Step(0.1f);
-
-            /*
-            //Add current positions to an array which will be sent back to the client
-            for (int i = 0; i < maxPlayers; i++ )
-            {
-                if (connectedPlayers[i] != null)
-                    connectedPlayers[i].positions.Add(new PositionInTime(deltaSecond, connectedPlayers[i].body.Position));
-            }
-            */
+            physicsWorld.Step(1f/60f);
 
             //Return data to clients
-            if (dataSentTimer > ReturnDataTime)
+            if (lastSentData >= 1f/ReturnDataPerSecond)
             {
                 for (int i = 0; i < maxPlayers; i++)
                 {
                     if (connectedPlayers[i] != null)
                     {
                         NetOutgoingMessage outMess = server.CreateMessage();
+
                         outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
-                        /*
-                        outMess.Write(connectedPlayers[i].positions.Count);
+                        outMess.Write(lastSentData);
+                        outMess.Write(connectedPlayers[i].body.Position);
 
-                        for (int j = 0; j < connectedPlayers[i].positions.Count; j++ )
-                        {
-                            outMess.Write(connectedPlayers[i].positions[j].Time);
-                            Console.WriteLine(connectedPlayers[i].positions[j].Position);
-                            outMess.Write(connectedPlayers[i].positions[j].Position);
-                        }
-                        */
-
-                        outMess.Write(connectedPlayers[i].body.Position/*new Vector2(100,200)*/);
-                        Console.WriteLine(connectedPlayers[i].body.Position);
                         server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.Unreliable);
+
+                        lastSentData = 0;
                     }
                 }
             }
+
+            //Make sure the server runs at about 60 frames per second
+            Thread.Sleep(1000/60);
 
             loopEndTime = Environment.TickCount;
         }
