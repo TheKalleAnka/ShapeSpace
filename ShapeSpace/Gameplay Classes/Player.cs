@@ -66,9 +66,9 @@ public class Player : ILoadable, IUpdateable
         }*/
 
         if (positions.Count > 1)
-            positions.RemoveAt(0);
+            positions.RemoveRange(0, positions.Count - 1);
         if (positions.Count > 0)
-            positionNow = targetPosition;
+            positionNow = positions[0].Position;
     }
 
     public void Draw(ref SpriteBatch spriteBatch) 

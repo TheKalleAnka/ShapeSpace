@@ -57,10 +57,11 @@ namespace ShapeSpace.Network
              */
 
             if (inputs.Count > 1)
-                inputs.RemoveAt(0);
+                inputs.RemoveRange(0,inputs.Count - 1);
 
             if(inputs.Count > 0)
-                body.ApplyForce(inputs[0].Input * 5f);
+                body.Position += inputs[0].Input;
+                //body.ApplyForce(inputs[0].Input * 0.01f);
         }
 
         public void SetUserName(string name)

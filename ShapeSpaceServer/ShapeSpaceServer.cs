@@ -70,10 +70,10 @@ class Program
                         {
                             case ShapeCustomNetMessageType.InputUpdate:
                                 //Console.WriteLine("Recieved input");
-                                int numOfInputs = msg.ReadInt32();
+                                //int numOfInputs = msg.ReadInt32();
 
                                 int playerIndex = FindPlayerByNetConnection(msg.SenderConnection).PlayerIndex;
-
+                                /*
                                 for (int i = 0; i < numOfInputs; i++ )
                                 {
                                     Vector2 input = msg.ReadVector2();
@@ -83,6 +83,12 @@ class Program
                                     //Console.WriteLine(input.ToString());
                                     //Console.WriteLine(time);
                                 }
+                                */
+
+                                Vector2 input = msg.ReadVector2();
+                                float time = msg.ReadFloat();
+                                connectedPlayers[playerIndex].inputs.Add(new InputWithTime(time, input));
+
                                 break;
                             case ShapeCustomNetMessageType.SetupRequest:
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
@@ -172,8 +178,9 @@ class Program
                         }
                         */
 
-                        outMess.Write(connectedPlayers[i].body.Position);
-                        server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.ReliableOrdered);
+                        outMess.Write(connectedPlayers[i].body.Position/*new Vector2(100,200)*/);
+                        Console.WriteLine(connectedPlayers[i].body.Position);
+                        server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.Unreliable);
                     }
                 }
             }

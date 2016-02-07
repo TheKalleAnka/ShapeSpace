@@ -85,9 +85,9 @@ public static class InputManager
         Vector2 vector = Vector2.Zero;
 
         if (IsKeyPressed(Keys.A))
-            vector.X = 1;
-        if (IsKeyPressed(Keys.D))
             vector.X = -1;
+        if (IsKeyPressed(Keys.D))
+            vector.X = 1;
         if (IsKeyPressed(Keys.W))
             vector.Y = -1;
         if (IsKeyPressed(Keys.S))

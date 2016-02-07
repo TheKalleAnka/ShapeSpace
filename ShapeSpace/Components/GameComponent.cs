@@ -77,17 +77,23 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             timeSinceLastAddedInput = 0;
             */
               
-            if ((sendTimer += (float)gameTime.ElapsedGameTime.TotalSeconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
+            if ((sendTimer += (float)gameTime.ElapsedGameTime.Seconds) >= 1f / sentInputPackagesPerSecond && client.ConnectionStatus == NetConnectionStatus.Connected)
             {
                 NetOutgoingMessage outInput = client.CreateMessage();
                 outInput.Write((byte)ShapeCustomNetMessageType.InputUpdate);
-                outInput.Write(1/*inputsPendingDeparture.Count*/);
+
+                /*
+                outInput.Write(inputsPendingDeparture.Count);
 
                 for (int i = 0; i < inputsPendingDeparture.Count; i++)
                 {
-                    outInput.Write(InputManager.GetMovementInputAsVector()/*inputsPendingDeparture[i].Input*/);
-                    outInput.Write(0/*inputsPendingDeparture[i].TimeSincePrevious*/);
+                    outInput.Write(inputsPendingDeparture[i].Input);
+                    outInput.Write(inputsPendingDeparture[i].TimeSincePrevious);
                 }
+                */
+
+                outInput.Write(InputManager.GetMovementInputAsVector());
+                outInput.Write(timeSinceLastAddedInput);
 
                 client.SendMessage(outInput, NetDeliveryMethod.ReliableOrdered);
 
@@ -141,15 +147,19 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                     switch((ShapeCustomNetMessageType)msg.ReadByte())
                     {
                         case ShapeCustomNetMessageType.LocationUpdate:
-                            int numOfPos = /*msg.ReadInt32()*/1;
+                            /*
+                            int numOfPos = msg.ReadInt32();
 
                             for (int i = 0; i < numOfPos; i++ )
                             {
-                                //float time = msg.ReadFloat();
+                                float time = msg.ReadFloat();
                                 Vector2 vector = msg.ReadVector2();
 
-                                player.positions.Add(new PositionInTime(/*time*/0, vector));
+                                player.positions.Add(new PositionInTime(time, vector));
                             }
+                            */
+                            Vector2 vector = msg.ReadVector2();
+                            player.positions.Add(new PositionInTime(0, vector));
                             break;
                     }
                     break;
