@@ -49,7 +49,7 @@ namespace ShapeSpace.Network
 
             if (inputs.Count >= 1)
                 //body.Position += inputs[0].Input;
-                body.ApplyForce(inputs[0].Input * 100f);
+                body.ApplyForce(inputs[0].Input * 50f);
 
             System.Console.WriteLine(body.LinearVelocity);
         }

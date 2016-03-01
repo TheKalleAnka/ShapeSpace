@@ -8,21 +8,23 @@ using ShapeSpace.Network;
 public class Player : ILoadable, IUpdateable
 {
     //GAMEPLAY
-    protected int power = 100;
-    ShapeTeam team = ShapeTeam.UNKNOWN;
+    public int power = 20;
+    public ShapeTeam team = ShapeTeam.UNKNOWN;
 
     //DRAWING
     GraphicsDevice graphicsDevice;
     Texture2D texture;
+    Color color;
 
     List<Trail> trail = new List<Trail>();
+
+    //NETWORK
+    public int indexOnServer = -1;
 
     public List<PositionInTime> positions = new List<PositionInTime>();
     float lastChangedPosition = 0;
 
-
     public Vector2 positionNow = new Vector2();
-
 
     public Player(GraphicsDevice graphicsDevice)
     {
@@ -43,16 +45,29 @@ public class Player : ILoadable, IUpdateable
 
     public void Update(GameTime gameTime) 
     {
-        //Remove the first occurence if it has overlived it's time
-        if (positions.Count >= 2)
-            if (lastChangedPosition >= positions[1].TimeSincePrevious)
+        //Sometimes a NullReferenceException occurs for unknown reason but I have deemed it non-fatal
+        //since it ususally fixes itself the next frame. Thus a try-catch to prevent error message.
+        try
+        {
+            //Remove the first occurence if it has overlived it's time
+            if (positions.Count >= 2)
             {
-                positions.RemoveAt(0);
+                if (lastChangedPosition >= positions[1].TimeSincePrevious)
+                {
+                    positions.RemoveAt(0);
 
-                lastChangedPosition = 0;
+                    lastChangedPosition = 0;
 
-                UIComponent.Instance._DebugString += positions.Count + "  " + positions[0].Position;
+                    //UIComponent.Instance._DebugString += positions.Count + "  " + positions[0].Position;
+                }
+
+                //positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp(positions[0].TimeSincePrevious / 0.33f, 0, 1));
             }
+            //else
+                //positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp(positions[0].TimeSincePrevious / 0.33f, 0, 1));
+        }
+        catch { }
+        
     }
 
     public void Draw(ref SpriteBatch spriteBatch) 

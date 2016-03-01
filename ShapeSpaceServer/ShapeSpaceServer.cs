@@ -6,6 +6,7 @@ using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using FarseerPhysics.Factories;
 using System.Threading;
+using System.Collections.Generic;
 
 class Program
 {
@@ -22,7 +23,7 @@ class Program
         float deltaSecond = 0;
 
         //Frequency to return data
-        const float ReturnDataPerSecond = 20;
+        const float ReturnDataPerSecond = 80;
         float lastSentData = 0;
 
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
@@ -71,10 +72,11 @@ class Program
                         switch((ShapeCustomNetMessageType)msg.ReadByte())
                         {
                             case ShapeCustomNetMessageType.InputUpdate:
+                                int playerIndex = msg.ReadInt32();
                                 float timeSinceLast = msg.ReadFloat();
                                 Vector2 input = msg.ReadVector2();
 
-                                connectedPlayers[FindPlayerByNetConnection(msg.SenderConnection).PlayerIndex].inputs.Add(new InputWithTime(timeSinceLast,input));
+                                connectedPlayers[playerIndex].inputs.Add(new InputWithTime(timeSinceLast,input));
 
                                 //Console.WriteLine(timeSinceLast + ": " + input.ToString());
                                 break;
@@ -82,11 +84,14 @@ class Program
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
 
                                 NetworkPlayer newPlayer = new NetworkPlayer(ref physicsWorld, msg.SenderConnection, new Vector2(100,100));
-                                
+
+                                ShapeTeam team = (ShapeTeam)msg.ReadByte();
+                                string username = msg.ReadString();
+
                                 try
                                 {
-                                    newPlayer.SetTeam((ShapeTeam)msg.ReadByte());
-                                    newPlayer.SetUserName(msg.ReadString());
+                                    newPlayer.SetTeam(team);
+                                    newPlayer.SetUserName(username);
 
                                     int spot = AddNewPlayer(newPlayer);
 
@@ -99,7 +104,22 @@ class Program
                                     server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableOrdered);
                                     break;
                                 }
+                                
                                 returnMessage.Write((byte)ShapeCustomNetMessageType.SetupSuccessful);
+                                returnMessage.Write(newPlayer.PlayerIndex);
+
+                                returnMessage.Write(connectedPlayersActual);
+
+                                for (int i = 0; i < connectedPlayers.Length; i++)
+                                {
+                                    if(connectedPlayers[i] != null)
+                                    {
+                                        returnMessage.Write(connectedPlayers[i].PlayerIndex);
+                                        returnMessage.Write((byte)connectedPlayers[i].team);
+                                        returnMessage.Write(connectedPlayers[i].power);
+                                    }
+                                }
+
                                 server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableUnordered);
 
                                 Console.WriteLine("Player connected");
@@ -114,6 +134,8 @@ class Program
                     case NetIncomingMessageType.ConnectionApproval:
                         Console.WriteLine("A client is asking to connect");
                         //Approve the connection and send back a hailmessage containing server info back
+
+
                         msg.SenderConnection.Approve();
                         break;
                     case NetIncomingMessageType.StatusChanged:
@@ -135,30 +157,37 @@ class Program
             UpdatePlayers(deltaSecond);
 
             //Simulate the world
-            physicsWorld.Step(1f/60f);
+            physicsWorld.Step(1f/100f);
 
             //Return data to clients
-            if (lastSentData >= 1f/ReturnDataPerSecond)
+            if (lastSentData >= 1f/ReturnDataPerSecond && connectedPlayersActual > 0)
             {
+                List<NetConnection> recipients = new List<NetConnection>();
+
+                NetOutgoingMessage outMess = server.CreateMessage();
+                outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
+                outMess.Write(connectedPlayersActual);
+
                 for (int i = 0; i < maxPlayers; i++)
                 {
                     if (connectedPlayers[i] != null)
                     {
-                        NetOutgoingMessage outMess = server.CreateMessage();
+                        outMess.Write(i);
 
-                        outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
                         outMess.Write(lastSentData);
                         outMess.Write(connectedPlayers[i].body.Position);
 
-                        server.SendMessage(outMess, connectedPlayers[i].netConnection, NetDeliveryMethod.Unreliable);
-
-                        lastSentData = 0;
+                        recipients.Add(connectedPlayers[i].netConnection);
                     }
                 }
+
+                server.SendMessage(outMess, recipients, NetDeliveryMethod.UnreliableSequenced, 0);
+
+                lastSentData = 0;
             }
 
-            //Make sure the server runs at about 60 frames per second
-            Thread.Sleep(1000/60);
+            //Make sure the server runs at about 10 frames per second
+            Thread.Sleep(1000/100);
 
             loopEndTime = Environment.TickCount;
         }

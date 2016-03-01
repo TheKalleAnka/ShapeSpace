@@ -14,7 +14,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 {
     //GAMEPLAY
     Player player;
-    
+
+    Player[] playersOnSameServer = new Player[10];
+
     //PHYSICS
     
     //NETWORK
@@ -56,10 +58,11 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         lastSentInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         //If it is time to send a package of inputs
-        if(lastSentInput >= 1f/sentInputPackagesPerSecond && client != null)
+        if(lastSentInput >= 1f/sentInputPackagesPerSecond && player.indexOnServer >= 0)
         {
             NetOutgoingMessage outMessage = client.CreateMessage();
             outMessage.Write((byte)ShapeCustomNetMessageType.InputUpdate);
+            outMessage.Write(player.indexOnServer);
             outMessage.Write(lastSentInput);
             outMessage.Write(InputManager.GetMovementInputAsVector());
             client.SendMessage(outMessage, NetDeliveryMethod.ReliableOrdered);
@@ -83,6 +86,12 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
         if(player != null)
             player.Draw(ref spriteBatch);
+
+        for (int i = 0; i < playersOnSameServer.Length; i++ )
+        {
+            if(playersOnSameServer[i] != null)
+            playersOnSameServer[i].Draw(ref spriteBatch);
+        }
 
         spriteBatch.End();
     }
@@ -112,14 +121,57 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                 case NetIncomingMessageType.Data:
                     switch((ShapeCustomNetMessageType)msg.ReadByte())
                     {
+                        //Contains the current locations of the players on the server
                         case ShapeCustomNetMessageType.LocationUpdate:
-                            float time = msg.ReadFloat();
-                            Vector2 pos = msg.ReadVector2();
+                            int numOfPlayers = msg.ReadInt32();
 
-                            player.positions.Add(new PositionInTime(time,pos));
+                            for (int i = 0; i < numOfPlayers; i++)
+                            {
+                                int index = msg.ReadInt32();
+                                float time = msg.ReadFloat();
+                                Vector2 pos = msg.ReadVector2();
 
-                            player.positionNow = pos;
+                                if (index == player.indexOnServer)
+                                {
+                                    player.positions.Add(new PositionInTime(time, pos));
+                                    player.positionNow = pos;
+                                }
+                                else if (playersOnSameServer[index] != null)
+                                {
+                                    //playersOnSameServer[i].positions.Add(new PositionInTime(time, pos));
+                                    playersOnSameServer[i].positionNow = pos;
+                                }
+                            }
+                            break;
+                        //A new player has joined the server which has to be added to this client
+                        case ShapeCustomNetMessageType.NewPlayerJoined:
+                            int indexOnServer = msg.ReadInt32();
+                            ShapeTeam team = (ShapeTeam)msg.ReadByte();
+                            int power = msg.ReadInt32();
 
+                            Player newPlayer = new Player(spriteBatch.GraphicsDevice);
+
+                            newPlayer.indexOnServer = indexOnServer;
+                            newPlayer.SetTeam(team);
+                            newPlayer.power = power;
+
+                            playersOnSameServer[indexOnServer] = newPlayer;
+                            break;
+                        case ShapeCustomNetMessageType.SetupSuccessful:
+                            //Have our index on server handed to us
+                            player.indexOnServer = msg.ReadInt32();
+                            /*
+                            int numOfPlayers1 = msg.ReadInt32();
+
+                            for (int i = 0; i < numOfPlayers1; i++ )
+                            {
+                                Player p = new Player(spriteBatch.GraphicsDevice);
+                                int index = msg.ReadInt32();
+                                p.indexOnServer = index;
+                                p.SetTeam((ShapeTeam)msg.ReadByte());
+                                p.power = msg.ReadInt32();
+                                playersOnSameServer[index] = p;
+                            }*/
                             break;
                     }
                     break;

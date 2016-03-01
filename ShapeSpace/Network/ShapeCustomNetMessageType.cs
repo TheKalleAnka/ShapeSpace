@@ -15,6 +15,7 @@ namespace ShapeSpace.Network
         SetupSuccessful,
         SetupFailed,
         LocationUpdate,
-        InputUpdate
+        InputUpdate,
+        NewPlayerJoined
     }
 }
