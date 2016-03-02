@@ -14,7 +14,7 @@ namespace ShapeSpace.Network
 
         public NetConnection netConnection { get; private set; }
         public string Username { get; private set; }
-        public int PlayerIndex { get; set; }
+        //public int PlayerIndex { get; set; }
 
         public Body body;
 
@@ -26,6 +26,7 @@ namespace ShapeSpace.Network
             body.BodyType = BodyType.Dynamic;
             body.FixedRotation = true;
             body.Position = position;
+            body.Restitution = 10;
 
             Vertices verts = new Vertices();
             verts.Add(new Vector2(-power / 2, power / 2));
@@ -51,7 +52,7 @@ namespace ShapeSpace.Network
                 //body.Position += inputs[0].Input;
                 body.ApplyForce(inputs[0].Input * 50f);
 
-            System.Console.WriteLine(body.LinearVelocity);
+            //System.Console.WriteLine(body.LinearVelocity);
         }
 
         public void SetUserName(string name)

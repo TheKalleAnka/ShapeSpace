@@ -24,7 +24,7 @@ public class Player : ILoadable, IUpdateable
     public List<PositionInTime> positions = new List<PositionInTime>();
     float lastChangedPosition = 0;
 
-    public Vector2 positionNow = new Vector2();
+    public Vector2 positionNow = Vector2.Zero;
 
     public Player(GraphicsDevice graphicsDevice)
     {
@@ -72,7 +72,7 @@ public class Player : ILoadable, IUpdateable
 
     public void Draw(ref SpriteBatch spriteBatch) 
     {
-        if(texture != null && positions.Count > 0)
+        if(texture != null /*&& positions.Count > 0*/)
             spriteBatch.Draw(texture, new Rectangle((int)positionNow.X, (int)positionNow.Y, power, power), Color.ForestGreen);
     }
 

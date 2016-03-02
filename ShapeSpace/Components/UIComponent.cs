@@ -104,6 +104,11 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
         currentMenu = CreatePauseMenu();
     }
 
+    public void ShowMainMenu()
+    {
+        currentMenu = CreateMainMenu();
+    }
+
     Menu CreateMainMenu()
     {
         Menu menu = new Menu();

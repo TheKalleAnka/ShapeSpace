@@ -29,7 +29,7 @@ class Program
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
         config.MaximumConnections = maxPlayers;
-        config.ConnectionTimeout = 10;
+        config.ConnectionTimeout = 5;
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
@@ -83,7 +83,7 @@ class Program
                             case ShapeCustomNetMessageType.SetupRequest:
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
 
-                                NetworkPlayer newPlayer = new NetworkPlayer(ref physicsWorld, msg.SenderConnection, new Vector2(100,100));
+                                NetworkPlayer newPlayer = new NetworkPlayer(ref physicsWorld, msg.SenderConnection, new Vector2(0,0));
 
                                 ShapeTeam team = (ShapeTeam)msg.ReadByte();
                                 string username = msg.ReadString();
@@ -95,7 +95,7 @@ class Program
 
                                     int spot = AddNewPlayer(newPlayer);
 
-                                    newPlayer.PlayerIndex = spot;
+                                    newPlayer.indexOnServer = spot;
                                 }
                                 catch(Exception e)
                                 {
@@ -106,7 +106,7 @@ class Program
                                 }
                                 
                                 returnMessage.Write((byte)ShapeCustomNetMessageType.SetupSuccessful);
-                                returnMessage.Write(newPlayer.PlayerIndex);
+                                returnMessage.Write(newPlayer.indexOnServer);
 
                                 returnMessage.Write(connectedPlayersActual);
 
@@ -114,14 +114,26 @@ class Program
                                 {
                                     if(connectedPlayers[i] != null)
                                     {
-                                        returnMessage.Write(connectedPlayers[i].PlayerIndex);
+                                        returnMessage.Write(connectedPlayers[i].indexOnServer);
                                         returnMessage.Write((byte)connectedPlayers[i].team);
                                         returnMessage.Write(connectedPlayers[i].power);
                                     }
                                 }
 
                                 server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableUnordered);
+                                
+                                if(connectedPlayersActual > 1)
+                                {
+                                    NetOutgoingMessage newPlayerMessage = server.CreateMessage();
+                                    newPlayerMessage.Write((byte)ShapeCustomNetMessageType.NewPlayerJoined);
 
+                                    newPlayerMessage.Write(newPlayer.indexOnServer);
+                                    newPlayerMessage.Write((byte)newPlayer.team);
+                                    newPlayerMessage.Write(newPlayer.power);
+
+                                    server.SendMessage(newPlayerMessage, GetRecipientsWithExclusion(newPlayer.indexOnServer), NetDeliveryMethod.ReliableUnordered, 0);
+                                }
+                                
                                 Console.WriteLine("Player connected");
                                 break;
                         }
@@ -134,9 +146,10 @@ class Program
                     case NetIncomingMessageType.ConnectionApproval:
                         Console.WriteLine("A client is asking to connect");
                         //Approve the connection and send back a hailmessage containing server info back
+                        NetOutgoingMessage hailMessage = server.CreateMessage();
+                        hailMessage.Write(maxPlayers);
 
-
-                        msg.SenderConnection.Approve();
+                        msg.SenderConnection.Approve(hailMessage);
                         break;
                     case NetIncomingMessageType.StatusChanged:
                         if(msg.ReadByte() == (byte)NetConnectionStatus.Disconnected)
@@ -244,6 +257,25 @@ class Program
         }
 
         return -1;
+    }
+
+    static NetConnection[] GetRecipientsWithExclusion(int exclusionIndex)
+    {
+        NetConnection[] recipients = new NetConnection[connectedPlayersActual - 1];
+
+        int additions = 0;
+
+        for(int i = 0; i < maxPlayers; i++)
+        {
+            if (connectedPlayers[i] != null)
+                if (connectedPlayers[i].indexOnServer != exclusionIndex)
+                {
+                    recipients[additions] = connectedPlayers[i].netConnection;
+                    additions++;
+                }  
+        }
+
+        return recipients;
     }
 
     static NetworkPlayer FindPlayerByNetConnection(NetConnection con)

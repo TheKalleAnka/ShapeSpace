@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using ShapeSpace.Network;
-using System.Collections.Generic;
 
 /// <summary>
 /// The component that handles all things related to gameplay
@@ -14,10 +13,10 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 {
     //GAMEPLAY
     Player player;
+    Player[] playersOnSameServer;
 
-    Player[] playersOnSameServer = new Player[10];
-
-    //PHYSICS
+    //DRAWING
+    ContentManager cManager;
     
     //NETWORK
     NetClient client;
@@ -40,6 +39,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
     public void LoadContent(ContentManager cManager)
     {
+        this.cManager = cManager;
+
         player.LoadContent(cManager);
         font = cManager.Load<SpriteFont>("text");
     }
@@ -65,7 +66,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             outMessage.Write(player.indexOnServer);
             outMessage.Write(lastSentInput);
             outMessage.Write(InputManager.GetMovementInputAsVector());
-            client.SendMessage(outMessage, NetDeliveryMethod.ReliableOrdered);
+            client.SendMessage(outMessage, NetDeliveryMethod.UnreliableSequenced);
 
             lastSentInput = 0;
         }
@@ -73,7 +74,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         if(player != null)
             player.Update(gameTime);
 
-        //camera.Position = player.GetPosition() - camera.Origin + new Vector2(player.scale/2f,player.scale/2f);
+        camera.Position = player.positionNow - camera.Origin + new Vector2(player.power/2f,player.power/2f);
     }
 
     /// <summary>
@@ -82,18 +83,21 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// <param name="gameTime"></param>
     public void Draw(GameTime gameTime)
     {
-        spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
-
-        if(player != null)
-            player.Draw(ref spriteBatch);
-
-        for (int i = 0; i < playersOnSameServer.Length; i++ )
+        if(playersOnSameServer != null)
         {
-            if(playersOnSameServer[i] != null)
-            playersOnSameServer[i].Draw(ref spriteBatch);
-        }
+            spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
 
-        spriteBatch.End();
+            if (player != null)
+                player.Draw(ref spriteBatch);
+            
+            for (int i = 0; i < playersOnSameServer.Length; i++)
+            {
+                if (playersOnSameServer[i] != null)
+                    playersOnSameServer[i].Draw(ref spriteBatch);
+            }
+
+            spriteBatch.End();
+        }
     }
 
     /// <summary>
@@ -155,12 +159,16 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             newPlayer.SetTeam(team);
                             newPlayer.power = power;
 
+                            newPlayer.LoadContent(cManager);
+
                             playersOnSameServer[indexOnServer] = newPlayer;
+                            
+                            //MessageBox.Show("New player jioned");
                             break;
                         case ShapeCustomNetMessageType.SetupSuccessful:
                             //Have our index on server handed to us
                             player.indexOnServer = msg.ReadInt32();
-                            /*
+                            
                             int numOfPlayers1 = msg.ReadInt32();
 
                             for (int i = 0; i < numOfPlayers1; i++ )
@@ -170,8 +178,11 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 p.indexOnServer = index;
                                 p.SetTeam((ShapeTeam)msg.ReadByte());
                                 p.power = msg.ReadInt32();
+
+                                p.LoadContent(cManager);
+
                                 playersOnSameServer[index] = p;
-                            }*/
+                            }
                             break;
                     }
                     break;
@@ -187,7 +198,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                         //When connected to the server
                         case NetConnectionStatus.Connected:
                             //1. Handle hailmessage containing server info
-                            //To be implemented
+                            int maxPlayersOnServer = msg.SenderConnection.RemoteHailMessage.ReadInt32();
+                            playersOnSameServer = new Player[maxPlayersOnServer];
 
                             //2. Send client info
                             NetOutgoingMessage outMsg = client.CreateMessage();
@@ -204,6 +216,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 MessageBox.Show("Disconnected! Reason unknown.");
                             else
                                 MessageBox.Show("Disconnected, Reason: " + reason);
+
+                            HandleDisconnection();
                             break;
                     }
                     break;
@@ -220,6 +234,13 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         NetOutgoingMessage outmessage = client.CreateMessage();
         outmessage.Write(s);
         client.SendMessage(outmessage, NetDeliveryMethod.ReliableOrdered);
+    }
+
+    void HandleDisconnection()
+    {
+        playersOnSameServer = null;
+
+        UIComponent.Instance.ShowMainMenu();
     }
 
     public void UpdateGameState(GameStates newGameState)
