@@ -23,13 +23,13 @@ class Program
         float deltaSecond = 0;
 
         //Frequency to return data
-        const float ReturnDataPerSecond = 80;
+        const float ReturnDataPerSecond = 20;
         float lastSentData = 0;
 
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
         config.MaximumConnections = maxPlayers;
-        config.ConnectionTimeout = 5;
+        config.ConnectionTimeout = 100;
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
@@ -185,7 +185,7 @@ class Program
                 {
                     if (connectedPlayers[i] != null)
                     {
-                        outMess.Write(i);
+                        outMess.Write(connectedPlayers[i].indexOnServer);
 
                         outMess.Write(lastSentData);
                         outMess.Write(connectedPlayers[i].body.Position);

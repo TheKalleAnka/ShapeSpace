@@ -18,12 +18,12 @@ namespace ShapeSpace
 
         GameComponent gc;
 
-        
-
         public ShapeSpace()
         {
             this.IsMouseVisible = true;
             graphics = new GraphicsDeviceManager(this);
+            graphics.PreferredBackBufferWidth = 1600;
+            graphics.PreferredBackBufferHeight = 900;
             Content.RootDirectory = "Content";
         }
 

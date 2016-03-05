@@ -4,6 +4,7 @@ using Lidgren.Network;
 using FarseerPhysics.Collision.Shapes;
 using FarseerPhysics.Common;
 using System.Collections.Generic;
+using FarseerPhysics.Dynamics.Contacts;
 
 namespace ShapeSpace.Network
 {
@@ -27,6 +28,7 @@ namespace ShapeSpace.Network
             body.FixedRotation = true;
             body.Position = position;
             body.Restitution = 10;
+            body.OnCollision += body_OnCollision;
 
             Vertices verts = new Vertices();
             verts.Add(new Vector2(-power / 2, power / 2));
@@ -37,6 +39,12 @@ namespace ShapeSpace.Network
             PolygonShape s = new PolygonShape(verts, 0);
 
             body.CreateFixture(s);
+        }
+
+        bool body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            power /= 2;
+            return true;
         }
 
         public void Update(float deltaTime)

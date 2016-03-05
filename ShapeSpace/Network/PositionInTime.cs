@@ -9,7 +9,8 @@ namespace ShapeSpace.Network
 
         public PositionInTime(float time, Vector2 pos)
         {
-
+            TimeSincePrevious = time;
+            Position = pos;
         }
     }
 }

@@ -54,7 +54,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     {
         //Handle inputs
         Vector2 vector = InputManager.GetMovementInputAsVector();
-        UIComponent.Instance._DebugString = vector.ToString();
+        //UIComponent.Instance._DebugString = vector.ToString();
 
         lastSentInput += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -138,12 +138,12 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 if (index == player.indexOnServer)
                                 {
                                     player.positions.Add(new PositionInTime(time, pos));
-                                    player.positionNow = pos;
+                                    //player.positionNow = pos;
                                 }
                                 else if (playersOnSameServer[index] != null)
                                 {
-                                    //playersOnSameServer[i].positions.Add(new PositionInTime(time, pos));
-                                    playersOnSameServer[i].positionNow = pos;
+                                    playersOnSameServer[i].positions.Add(new PositionInTime(time, pos));
+                                    //playersOnSameServer[i].positionNow = pos;
                                 }
                             }
                             break;

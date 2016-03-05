@@ -1,13 +1,16 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
 class Trail : IUpdateable
 {
-    public delegate void TrailCallback(string id);
+    public delegate void TrailCallback(int index);
 
     public event TrailCallback OnDestroy;
 
+    public int Index;
+
     Vector2 position;
-    int size;
+    float size;
     Color color;
 
     Texture2D texture;
@@ -22,23 +25,21 @@ class Trail : IUpdateable
         texture.SetData<Color>(new[]{Color.White});
     }
 
-    public void Draw(ref SpriteBatch spriteBatch, GameTime gameTime)
+    public void Draw(ref SpriteBatch spriteBatch)
     {
-        Rectangle rect = new Rectangle((int)position.X,(int)position.Y,size,size);
-
-        spriteBatch.Draw(texture, rect, color);
+        spriteBatch.Draw(texture, position: position, scale: new Vector2(size, size), color: color);
     }
 
     public void Update(GameTime gameTime)
     {
-        if (size <= 1)
+        if (size <= 0)
             Destroy();
 
-        size -= 1;
+        size -= 0.1f;
     }
 
     public void Destroy()
     {
-        OnDestroy("DESTROYED");
+        OnDestroy(Index);
     }
 }
