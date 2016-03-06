@@ -31,36 +31,51 @@ namespace ShapeSpace.Network
             body.OnCollision += body_OnCollision;
 
             Vertices verts = new Vertices();
-            verts.Add(new Vector2(-power / 2, power / 2));
-            verts.Add(new Vector2(-power / 2, -power / 2));
-            verts.Add(new Vector2(power / 2, -power / 2));
-            verts.Add(new Vector2(power / 2, power / 2));
+            verts.Add(new Vector2(-power / 2f, power / 2f));
+            verts.Add(new Vector2(-power / 2f, -power / 2f));
+            verts.Add(new Vector2(power / 2f, -power / 2f));
+            verts.Add(new Vector2(power / 2f, power / 2f));
 
             PolygonShape s = new PolygonShape(verts, 0);
 
             body.CreateFixture(s);
         }
-
+        
         bool body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
-        {
-            power /= 2;
+        {/*
+            power /= 2f;*/
             return true;
         }
 
         public void Update(float deltaTime)
         {
             lastChangedInput += deltaTime;
-
+            /*
             //Remove the first occurence if it has overlived it's time
             if (inputs.Count >= 2)
                 if (lastChangedInput >= inputs[1].TimeSincePrevious)
                     inputs.RemoveAt(0);
+            */
+            if (inputs.Count >= 2)
+            {
+                float behindInTime = 0;
+
+                for (int i = 0; i < inputs.Count - 1; i++)
+                {
+                    if (lastChangedInput >= inputs[0].TimeSincePrevious + behindInTime)
+                    {
+                        inputs.RemoveAt(0);
+
+                        behindInTime += inputs[0].TimeSincePrevious;
+                    }
+                }
+            }
 
             if (inputs.Count >= 1)
                 //body.Position += inputs[0].Input;
-                body.ApplyForce(inputs[0].Input * 50f);
+                body.ApplyForce(inputs[0].Input * 5f);
 
-            //System.Console.WriteLine(body.LinearVelocity);
+            System.Console.WriteLine(body.LinearVelocity);
         }
 
         public void SetUserName(string name)

@@ -23,7 +23,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     //When this reaches the desired value, an input package will be sent to the server
     float lastSentInput = 0;
     //Number of times every second that the game will send the current inputs to the server
-    const float sentInputPackagesPerSecond = 50;
+    const float sentInputPackagesPerSecond = 20;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
     {
@@ -74,8 +74,15 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         if(player != null)
             player.Update(gameTime);
 
-        camera.Position = player.positionNow - camera.Origin + new Vector2(player.power/2f,player.power/2f);
+        if(!tempTest && player != null)
+        {
+            camera.Position = player.positionNow - camera.Origin + new Vector2(player.power / 2f, player.power / 2f);
+            tempTest = true;
+        }
+        //UIComponent.Instance._DebugString
     }
+
+    bool tempTest = false;
 
     /// <summary>
     /// Draws the player
@@ -93,7 +100,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             for (int i = 0; i < playersOnSameServer.Length; i++)
             {
                 if (playersOnSameServer[i] != null)
-                    playersOnSameServer[i].Draw(ref spriteBatch);
+                    if(playersOnSameServer[i].indexOnServer != player.indexOnServer)
+                        playersOnSameServer[i].Draw(ref spriteBatch);
             }
 
             spriteBatch.End();
@@ -137,12 +145,12 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
                                 if (index == player.indexOnServer)
                                 {
-                                    player.positions.Add(new PositionInTime(time, pos));
+                                    player.positions.Add(new PositionInTime(time, pos, false));
                                     //player.positionNow = pos;
                                 }
                                 else if (playersOnSameServer[index] != null)
                                 {
-                                    playersOnSameServer[i].positions.Add(new PositionInTime(time, pos));
+                                    playersOnSameServer[i].positions.Add(new PositionInTime(time, pos, false));
                                     //playersOnSameServer[i].positionNow = pos;
                                 }
                             }

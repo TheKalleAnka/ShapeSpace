@@ -21,13 +21,17 @@ class Trail : IUpdateable
         this.size = size;
         this.color = color;
 
-        texture = new Texture2D(gDev, 1, 1);
-        texture.SetData<Color>(new[]{Color.White});
+        if(gDev != null)
+        {
+            texture = new Texture2D(gDev, 1, 1);
+            texture.SetData<Color>(new[] { Color.White });
+        }
     }
 
     public void Draw(ref SpriteBatch spriteBatch)
     {
-        spriteBatch.Draw(texture, position: position, scale: new Vector2(size, size), color: color);
+        if(texture != null)
+            spriteBatch.Draw(texture, position: position - new Vector2(size/2f,size/2f), scale: new Vector2(size, size), color: color);
     }
 
     public void Update(GameTime gameTime)
@@ -35,7 +39,7 @@ class Trail : IUpdateable
         if (size <= 0)
             Destroy();
 
-        size -= 0.1f;
+        size -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.5f;
     }
 
     public void Destroy()

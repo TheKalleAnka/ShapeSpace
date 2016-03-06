@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using FarseerPhysics.Factories;
 using System.Threading;
 using System.Collections.Generic;
+using FarseerPhysics;
 
 class Program
 {
@@ -36,6 +37,8 @@ class Program
         NetServer server = new NetServer(config);
 
         World physicsWorld = new World(Vector2.Zero);
+        //50px = 1m
+        ConvertUnits.SetDisplayUnitToSimUnitRatio(50f);
 
         try
         {
@@ -129,7 +132,7 @@ class Program
 
                                     newPlayerMessage.Write(newPlayer.indexOnServer);
                                     newPlayerMessage.Write((byte)newPlayer.team);
-                                    newPlayerMessage.Write(newPlayer.power);
+                                    newPlayerMessage.Write(/*newPlayer.power*/5);
 
                                     server.SendMessage(newPlayerMessage, GetRecipientsWithExclusion(newPlayer.indexOnServer), NetDeliveryMethod.ReliableUnordered, 0);
                                 }
@@ -188,7 +191,7 @@ class Program
                         outMess.Write(connectedPlayers[i].indexOnServer);
 
                         outMess.Write(lastSentData);
-                        outMess.Write(connectedPlayers[i].body.Position);
+                        outMess.Write(ConvertUnits.ToDisplayUnits(connectedPlayers[i].body.Position));
 
                         recipients.Add(connectedPlayers[i].netConnection);
                     }
@@ -199,8 +202,8 @@ class Program
                 lastSentData = 0;
             }
 
-            //Make sure the server runs at about 10 frames per second
-            Thread.Sleep(1000/100);
+            //Make sure the server runs at about 60 frames per second
+            Thread.Sleep(1000/17);
 
             loopEndTime = Environment.TickCount;
         }

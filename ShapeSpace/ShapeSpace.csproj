@@ -54,6 +54,7 @@
     <Compile Include="Interfaces\ILoadable.cs" />
     <Compile Include="Interfaces\IMenuClickable.cs" />
     <Compile Include="Interfaces\IUpdateable.cs" />
+    <Compile Include="Network\NetworkTrail.cs" />
     <Compile Include="Network\ShapeClass.cs" />
     <Compile Include="Network\ShapeCustomNetMessageType.cs" />
     <Compile Include="Network\InputWithTime.cs" />
