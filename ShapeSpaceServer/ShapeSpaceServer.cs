@@ -17,6 +17,8 @@ class Program
     //The number of players that are connected
     static int connectedPlayersActual = 0;
 
+    static NetServer server;
+
     static void Main(string[] args)
     {
         int loopStartTime = 0;
@@ -34,7 +36,7 @@ class Program
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
-        NetServer server = new NetServer(config);
+        server = new NetServer(config);
 
         World physicsWorld = new World(Vector2.Zero);
         //50px = 1m
@@ -134,7 +136,7 @@ class Program
                                     newPlayerMessage.Write((byte)newPlayer.team);
                                     newPlayerMessage.Write(/*newPlayer.power*/5);
 
-                                    server.SendMessage(newPlayerMessage, GetRecipientsWithExclusion(newPlayer.indexOnServer), NetDeliveryMethod.ReliableUnordered, 0);
+                                    server.SendMessage(newPlayerMessage, GetRecipients(newPlayer.indexOnServer), NetDeliveryMethod.ReliableUnordered, 0);
                                 }
                                 
                                 Console.WriteLine("Player connected");
@@ -178,7 +180,7 @@ class Program
             //Return data to clients
             if (lastSentData >= 1f/ReturnDataPerSecond && connectedPlayersActual > 0)
             {
-                List<NetConnection> recipients = new List<NetConnection>();
+                //List<NetConnection> recipients = new List<NetConnection>();
 
                 NetOutgoingMessage outMess = server.CreateMessage();
                 outMess.Write((byte)ShapeCustomNetMessageType.LocationUpdate);
@@ -189,21 +191,30 @@ class Program
                     if (connectedPlayers[i] != null)
                     {
                         outMess.Write(connectedPlayers[i].indexOnServer);
-
+                        outMess.Write(connectedPlayers[i].power);
                         outMess.Write(lastSentData);
                         outMess.Write(ConvertUnits.ToDisplayUnits(connectedPlayers[i].body.Position));
 
-                        recipients.Add(connectedPlayers[i].netConnection);
+                        int trailCount = connectedPlayers[i].trail.Count;
+                        outMess.Write(trailCount);
+                        
+                        for(int j = 0; j < trailCount; j++)
+                        {
+                            //outMess.Write(connectedPlayers[i].trail[j].Id);
+                            outMess.Write(connectedPlayers[i].trail[j].position);
+                            outMess.Write(connectedPlayers[i].trail[j].size);
+                        }
                     }
                 }
 
-                server.SendMessage(outMess, recipients, NetDeliveryMethod.UnreliableSequenced, 0);
+                server.SendMessage(outMess, GetRecipients(-1), NetDeliveryMethod.ReliableOrdered, 0);
 
                 lastSentData = 0;
             }
 
             //Make sure the server runs at about 60 frames per second
-            Thread.Sleep(1000/17);
+            if(deltaSecond * 1000 < 1000/17)
+                Thread.Sleep(Convert.ToInt32(1000/17 - deltaSecond * 1000));
 
             loopEndTime = Environment.TickCount;
         }
@@ -216,6 +227,14 @@ class Program
             if (connectedPlayers[i] != null)
                 connectedPlayers[i].Update(deltaTime);
         }
+    }
+
+    public static void ReportDestroyedTrail(int id)
+    {
+        NetOutgoingMessage message = server.CreateMessage();
+        message.Write((byte)ShapeCustomNetMessageType.DestroyedTrail);
+        message.Write(id);
+        server.SendMessage(message, GetRecipients(-1),NetDeliveryMethod.ReliableUnordered,0);
     }
 
     //Called when a player connects
@@ -262,9 +281,14 @@ class Program
         return -1;
     }
 
-    static NetConnection[] GetRecipientsWithExclusion(int exclusionIndex)
+    static NetConnection[] GetRecipients(int exclusionIndex)
     {
-        NetConnection[] recipients = new NetConnection[connectedPlayersActual - 1];
+        NetConnection[] recipients;
+
+        if(exclusionIndex < 0 || exclusionIndex >= maxPlayers)
+            recipients = new NetConnection[connectedPlayersActual];
+        else
+            recipients = new NetConnection[connectedPlayersActual - 1];
 
         int additions = 0;
 

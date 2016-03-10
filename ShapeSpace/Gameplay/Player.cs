@@ -8,7 +8,7 @@ using ShapeSpace.Network;
 public class Player : ILoadable, IUpdateable
 {
     //GAMEPLAY
-    public float power = 5f;
+    public float power = 25f;
     public ShapeTeam team = ShapeTeam.UNKNOWN;
 
     //DRAWING
@@ -17,8 +17,10 @@ public class Player : ILoadable, IUpdateable
     Color color;
 
     //TRAIL
-    List<Trail> trail = new List<Trail>();
-    Vector2 positionLastAddedTrail = Vector2.Zero;
+    public List<Trail> trail = new List<Trail>();
+    protected Vector2 positionLastAddedTrail = Vector2.Zero;
+    public delegate void TrailCreation(Vector2 pos, float size, int id);
+    public TrailCreation OnCreatedTrail;
 
     //NETWORK
     public int indexOnServer = -1;
@@ -93,16 +95,16 @@ public class Player : ILoadable, IUpdateable
             //TimeSincePrevious thus adds to the input lag on top of the latency
             if(positions.Count > 0)
                 positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp((float)gameTime.ElapsedGameTime.TotalSeconds / positions[0].TimeSincePrevious - 0.1f,0,1));
-
+            /*
             if (Vector2.Distance(positionLastAddedTrail, positionNow) > 3f)
-                CreateNewRowOfTrail();
+                CreateNewRowOfTrail();*/
         }
         catch { }
-
+        /*
         for (int i = 0; i < trail.Count; i++)
         {
-            trail[i].Update(gameTime);
-        }
+            trail[i].Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+        }*/
         /*
         if(positions.Count > 0)
             UIComponent.Instance._DebugString = positions.Count + "  " + positions[0].Position + " " + positionNow;*/
@@ -137,21 +139,25 @@ public class Player : ILoadable, IUpdateable
 
     public void CreateNewRowOfTrail()
     {
-        Trail newTrail = new Trail(positionNow, 2, Color.Blue, graphicsDevice);
-        newTrail.Index = trail.Count;
-        newTrail.OnDestroy += WhenTrailIsDestroyed;
+        Trail newTrail = new Trail(positionNow, 2, Color.Blue, graphicsDevice, null);
+        newTrail.Id = trail.Count;
+        newTrail.OnDestroy += DestroyTrail;
         trail.Add(newTrail);
 
         positionLastAddedTrail = positionNow;
+
+        OnCreatedTrail(positionNow, 2, newTrail.Id);
     }
 
-    void WhenTrailIsDestroyed(int index)
+    public void DestroyTrail(int id)
     {
-        trail.RemoveAt(index);
-
         for(int i = 0; i < trail.Count; i++)
         {
-            trail[i].Index = i;
+            if (trail[i].Id == id)
+            {
+                trail.RemoveAt(i);
+                break;
+            }
         }
     }
 }

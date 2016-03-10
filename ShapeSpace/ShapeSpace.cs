@@ -76,6 +76,7 @@ namespace ShapeSpace
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            ///INPUT
             InputManager.Update(gameTime);
 
             MouseState mouseState = Mouse.GetState();
@@ -85,12 +86,16 @@ namespace ShapeSpace
 
             if (mouseState.LeftButton == ButtonState.Pressed)
                 UIComponent.Instance.OnClick(new Vector2(mouseState.X, mouseState.Y));
-
+            ///END INPUT
+            
             //(float)gameTime.ElapsedGameTime.TotalSeconds = DeltaTime
             gc.Update(gameTime);
             UIComponent.Instance.Update(gameTime);
 
             base.Update(gameTime);
+
+            //Show the FPS
+            UIComponent.Instance._DebugString = (Convert.ToInt16(1 / gameTime.ElapsedGameTime.TotalSeconds)).ToString();
         }
 
         /// <summary>

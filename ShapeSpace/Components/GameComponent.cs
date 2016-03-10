@@ -13,6 +13,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 {
     //GAMEPLAY
     Player player;
+    //A mirror of the array on the server and contains the player version of those on there
     Player[] playersOnSameServer;
 
     //DRAWING
@@ -33,10 +34,16 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     public void Initialize()
     {
         player = new Player(spriteBatch.GraphicsDevice);
+        player.OnCreatedTrail += ReportNewTrail;
     }
 
+    //The font used when writing things on the screen
     SpriteFont font;
 
+    /// <summary>
+    /// Called by the shell to load any necessary content
+    /// </summary>
+    /// <param name="cManager">The ContentManager reponsible for loading the content</param>
     public void LoadContent(ContentManager cManager)
     {
         this.cManager = cManager;
@@ -45,6 +52,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         font = cManager.Load<SpriteFont>("text");
     }
 
+    /// <summary>
+    /// Called by the shell when the game is closing to release resources
+    /// </summary>
     public void UnloadContent()
     {
         player.UnloadContent();
@@ -71,10 +81,20 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             lastSentInput = 0;
         }
 
+        //Update the local player
         if(player != null)
             player.Update(gameTime);
 
-        if(!tempTest && player != null)
+        //Update the other players
+        if(playersOnSameServer != null)
+            for (int i = 0; i < playersOnSameServer.Length; i++)
+            {
+                if (playersOnSameServer[i] != null)
+                    playersOnSameServer[i].Update(gameTime);
+            }
+
+        //Set the camera to the players position when the player is created and don't move it afterward
+        if (!tempTest && player != null)
         {
             camera.Position = player.positionNow - camera.Origin + new Vector2(player.power / 2f, player.power / 2f);
             tempTest = true;
@@ -140,18 +160,68 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             for (int i = 0; i < numOfPlayers; i++)
                             {
                                 int index = msg.ReadInt32();
+                                float powr = msg.ReadFloat();
                                 float time = msg.ReadFloat();
                                 Vector2 pos = msg.ReadVector2();
 
                                 if (index == player.indexOnServer)
                                 {
+                                    player.power = powr;
                                     player.positions.Add(new PositionInTime(time, pos, false));
                                     //player.positionNow = pos;
                                 }
                                 else if (playersOnSameServer[index] != null)
                                 {
-                                    playersOnSameServer[i].positions.Add(new PositionInTime(time, pos, false));
+                                    playersOnSameServer[index].power = powr;
+                                    playersOnSameServer[index].positions.Add(new PositionInTime(time, pos, false));
                                     //playersOnSameServer[i].positionNow = pos;
+                                }
+
+                                int numTrail = msg.ReadInt32();
+
+                                for(int j = 0; j < numTrail; j++)
+                                {
+                                    Vector2 position = msg.ReadVector2();
+                                    float size = msg.ReadFloat();
+
+                                    if(index == player.indexOnServer)
+                                    {
+                                        if(j < player.trail.Count)
+                                        {
+                                            if (player.trail[j] != null)
+                                            {
+                                                player.trail[j].position = position;
+                                                player.trail[j].size = size;
+                                            }
+
+                                            if (numTrail < player.trail.Count)
+                                                player.trail.RemoveRange(numTrail - 1,player.trail.Count - numTrail);
+                                        }
+                                        else
+                                        {
+                                            Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            player.trail.Add(t);
+                                        }
+                                    }
+                                    else if (playersOnSameServer[index] != null)
+                                    {
+                                        if(j < playersOnSameServer[index].trail.Count)
+                                        {
+                                            if (playersOnSameServer[index].trail[j] != null)
+                                            {
+                                                playersOnSameServer[index].trail[j].position = position;
+                                                playersOnSameServer[index].trail[j].size = size;
+                                            }
+
+                                            if (numTrail < playersOnSameServer[index].trail.Count)
+                                                playersOnSameServer[index].trail.RemoveRange(numTrail - 1, playersOnSameServer[index].trail.Count - numTrail);
+                                        }
+                                        else
+                                        {
+                                            Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            playersOnSameServer[index].trail.Add(t);
+                                        }
+                                    }
                                 }
                             }
                             break;
@@ -185,7 +255,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 int index = msg.ReadInt32();
                                 p.indexOnServer = index;
                                 p.SetTeam((ShapeTeam)msg.ReadByte());
-                                p.power = msg.ReadInt32();
+
+                                int powaar = msg.ReadInt32();
+                                //p.power = powaar;
 
                                 p.LoadContent(cManager);
 
@@ -237,10 +309,19 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         }
     }
 
-    void SendMessageToServer(string s)
+    void ReportNewTrail(Vector2 pos, float size, int id)
     {
         NetOutgoingMessage outmessage = client.CreateMessage();
-        outmessage.Write(s);
+        outmessage.Write((byte)ShapeCustomNetMessageType.CreatedTrail);
+        //Tell who the message is from
+        outmessage.Write(player.indexOnServer);
+        //Report the position of the new trail part
+        outmessage.Write(pos);
+        //Also required is the size of it
+        outmessage.Write(size);
+        //Send the id which has to correspond with the one on the client
+        outmessage.Write(id);
+
         client.SendMessage(outmessage, NetDeliveryMethod.ReliableOrdered);
     }
 
