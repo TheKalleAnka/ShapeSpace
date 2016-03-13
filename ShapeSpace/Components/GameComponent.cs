@@ -1,9 +1,11 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 using Lidgren.Network;
 using Lidgren.Network.Xna;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using ShapeSpace.Gameplay;
 using ShapeSpace.Network;
 
 /// <summary>
@@ -15,6 +17,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     Player player;
     //A mirror of the array on the server and contains the player version of those on there
     Player[] playersOnSameServer;
+    List<CollisionRemnant> remnants = new List<CollisionRemnant>();
 
     //DRAWING
     ContentManager cManager;
@@ -34,7 +37,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     public void Initialize()
     {
         player = new Player(spriteBatch.GraphicsDevice);
-        player.OnCreatedTrail += ReportNewTrail;
     }
 
     //The font used when writing things on the screen
@@ -76,7 +78,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             outMessage.Write(player.indexOnServer);
             outMessage.Write(lastSentInput);
             outMessage.Write(InputManager.GetMovementInputAsVector());
-            client.SendMessage(outMessage, NetDeliveryMethod.UnreliableSequenced);
+            client.SendMessage(outMessage, NetDeliveryMethod.UnreliableSequenced, 1);
 
             lastSentInput = 0;
         }
@@ -110,17 +112,22 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// <param name="gameTime"></param>
     public void Draw(GameTime gameTime)
     {
-        if(playersOnSameServer != null)
+        if (playersOnSameServer != null)
         {
             spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
 
+            for (int i = 0; i < remnants.Count; i++)
+            {
+                remnants[i].Draw(ref spriteBatch);
+            }
+
             if (player != null)
                 player.Draw(ref spriteBatch);
-            
+
             for (int i = 0; i < playersOnSameServer.Length; i++)
             {
                 if (playersOnSameServer[i] != null)
-                    if(playersOnSameServer[i].indexOnServer != player.indexOnServer)
+                    if (playersOnSameServer[i].indexOnServer != player.indexOnServer)
                         playersOnSameServer[i].Draw(ref spriteBatch);
             }
 
@@ -132,7 +139,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// Connects to the server
     /// </summary>
     /// <param name="ip">The IP of the server</param>
-    public void ConnectToServer(string ip)
+    public void ConnectToServer(string ip, int port)
     {
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
@@ -140,7 +147,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         client.Start();
         //The received messages should be handled in a message loop in update #ThisIsTemporary
         client.RegisterReceivedCallback(HandleClientMessages);
-        client.Connect(ip,55678);
+        client.Connect(ip,port);
     }
 
     void HandleClientMessages(object peer)
@@ -168,13 +175,11 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 {
                                     player.power = powr;
                                     player.positions.Add(new PositionInTime(time, pos, false));
-                                    //player.positionNow = pos;
                                 }
                                 else if (playersOnSameServer[index] != null)
                                 {
                                     playersOnSameServer[index].power = powr;
                                     playersOnSameServer[index].positions.Add(new PositionInTime(time, pos, false));
-                                    //playersOnSameServer[i].positionNow = pos;
                                 }
 
                                 int numTrail = msg.ReadInt32();
@@ -224,6 +229,28 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                     }
                                 }
                             }
+
+                            int numRemnants = msg.ReadInt32();
+
+                            for (int i = 0; i < numRemnants; i++ )
+                            {
+                                Vector2 pos = msg.ReadVector2();
+                                float size = msg.ReadFloat();
+
+                                if(i < remnants.Count)
+                                {
+                                    remnants[i].position = pos;
+                                    remnants[i].size = size;
+                                }
+                                else
+                                {
+                                    CollisionRemnant newRemnant = new CollisionRemnant(pos, size, Color.GhostWhite, spriteBatch.GraphicsDevice, null);
+                                    remnants.Add(newRemnant);
+                                }
+
+                                if (numRemnants < remnants.Count)
+                                    remnants.RemoveRange(numRemnants - 1, remnants.Count - numRemnants);
+                            }
                             break;
                         //A new player has joined the server which has to be added to this client
                         case ShapeCustomNetMessageType.NewPlayerJoined:
@@ -246,6 +273,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                         case ShapeCustomNetMessageType.SetupSuccessful:
                             //Have our index on server handed to us
                             player.indexOnServer = msg.ReadInt32();
+                            player.SetTeam((ShapeTeam)msg.ReadByte());
                             
                             int numOfPlayers1 = msg.ReadInt32();
 
@@ -263,6 +291,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 
                                 playersOnSameServer[index] = p;
                             }
+                            break;
+                        case ShapeCustomNetMessageType.SetupFailed:
+                            MessageBox.Show(msg.ReadString());
                             break;
                     }
                     break;
@@ -284,7 +315,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             //2. Send client info
                             NetOutgoingMessage outMsg = client.CreateMessage();
                             outMsg.Write((byte)ShapeCustomNetMessageType.SetupRequest);
-                            outMsg.Write((byte)ShapeTeam.BLUE);
+                            //outMsg.Write((byte)ShapeTeam.BLUE);
                             outMsg.Write("UserName");
                             client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
                             break;
@@ -307,22 +338,6 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             }
             client.Recycle(msg);
         }
-    }
-
-    void ReportNewTrail(Vector2 pos, float size, int id)
-    {
-        NetOutgoingMessage outmessage = client.CreateMessage();
-        outmessage.Write((byte)ShapeCustomNetMessageType.CreatedTrail);
-        //Tell who the message is from
-        outmessage.Write(player.indexOnServer);
-        //Report the position of the new trail part
-        outmessage.Write(pos);
-        //Also required is the size of it
-        outmessage.Write(size);
-        //Send the id which has to correspond with the one on the client
-        outmessage.Write(id);
-
-        client.SendMessage(outmessage, NetDeliveryMethod.ReliableOrdered);
     }
 
     void HandleDisconnection()

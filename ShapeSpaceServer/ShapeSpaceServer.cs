@@ -2,12 +2,14 @@
 using Lidgren.Network;
 using Lidgren.Network.Xna;
 using ShapeSpace.Network;
+using ShapeSpace.Gameplay;
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using FarseerPhysics.Factories;
 using System.Threading;
 using System.Collections.Generic;
 using FarseerPhysics;
+using ShapeSpace.Classes;
 
 class Program
 {
@@ -18,6 +20,10 @@ class Program
     static int connectedPlayersActual = 0;
 
     static NetServer server;
+    static World physicsWorld;
+
+    //Remnants
+    static List<NetworkCollisionRemnant> remnants = new List<NetworkCollisionRemnant>();
 
     static void Main(string[] args)
     {
@@ -29,6 +35,10 @@ class Program
         const float ReturnDataPerSecond = 20;
         float lastSentData = 0;
 
+        //Team containers
+        ShapeTeamContainer greenTeam = new ShapeTeamContainer(ShapeTeam.GREEN);
+        ShapeTeamContainer redTeam = new ShapeTeamContainer(ShapeTeam.RED);
+
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
         config.MaximumConnections = maxPlayers;
@@ -37,8 +47,9 @@ class Program
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
         server = new NetServer(config);
+        //Console.WriteLine(server.Configuration.LocalAddress);
 
-        World physicsWorld = new World(Vector2.Zero);
+        physicsWorld = new World(Vector2.Zero);
         //50px = 1m
         ConvertUnits.SetDisplayUnitToSimUnitRatio(50f);
 
@@ -88,30 +99,43 @@ class Program
                             case ShapeCustomNetMessageType.SetupRequest:
                                 NetOutgoingMessage returnMessage = server.CreateMessage();
 
-                                NetworkPlayer newPlayer = new NetworkPlayer(ref physicsWorld, msg.SenderConnection, new Vector2(0,0));
+                                NetworkPlayer newPlayer = new NetworkPlayer(physicsWorld, msg.SenderConnection, new Vector2(0,0));
 
-                                ShapeTeam team = (ShapeTeam)msg.ReadByte();
+                                //ShapeTeam team = (ShapeTeam)msg.ReadByte();
                                 string username = msg.ReadString();
 
                                 try
                                 {
-                                    newPlayer.SetTeam(team);
+                                    //newPlayer.SetTeam(team);
                                     newPlayer.SetUserName(username);
 
                                     int spot = AddNewPlayer(newPlayer);
 
                                     newPlayer.indexOnServer = spot;
+
+                                    //Assign the new player to the team with the least amount of players
+                                    ShapeTeamContainer newPlayerTeam = greenTeam.GetNumberOfMembers() < redTeam.GetNumberOfMembers() ? greenTeam : redTeam;
+                                    bool isBank = newPlayerTeam.AddPlayer(newPlayer.indexOnServer);
+                                    newPlayer.SetTeam(newPlayerTeam.GetTeam());
+
+                                    if (isBank)
+                                        newPlayer.SetClass(new ShapeClassBank());
+                                    else
+                                        newPlayer.SetClass(new ShapeClassKnocker());
+
+                                    newPlayer.OnCreateRemnant += CreateRemnant;
                                 }
                                 catch(Exception e)
                                 {
                                     returnMessage.Write((byte)ShapeCustomNetMessageType.SetupFailed);
                                     returnMessage.Write(e.Message);
-                                    server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableOrdered);
+                                    server.SendMessage(returnMessage, newPlayer.netConnection, NetDeliveryMethod.ReliableUnordered);
                                     break;
                                 }
                                 
                                 returnMessage.Write((byte)ShapeCustomNetMessageType.SetupSuccessful);
                                 returnMessage.Write(newPlayer.indexOnServer);
+                                returnMessage.Write((byte)newPlayer.team);
 
                                 returnMessage.Write(connectedPlayersActual);
 
@@ -159,7 +183,7 @@ class Program
                     case NetIncomingMessageType.StatusChanged:
                         if(msg.ReadByte() == (byte)NetConnectionStatus.Disconnected)
                         {
-                            Console.WriteLine("Player disconnected: " + FindPlayerByNetConnection(msg.SenderConnection).Username);
+                            //Console.WriteLine("Player disconnected: " + FindPlayerByNetConnection(msg.SenderConnection).Username);
 
                             RemovePlayer(msg.SenderConnection);
                         }
@@ -207,7 +231,17 @@ class Program
                     }
                 }
 
-                server.SendMessage(outMess, GetRecipients(-1), NetDeliveryMethod.ReliableOrdered, 0);
+                //Write all remnants positions
+                int remnantCount = remnants.Count;
+                outMess.Write(remnantCount);
+
+                for (int j = 0; j < remnantCount; j++)
+                {
+                    outMess.Write(remnants[j].position);
+                    outMess.Write(remnants[j].size);
+                }
+
+                server.SendMessage(outMess, GetRecipients(-1), NetDeliveryMethod.UnreliableSequenced, 2);
 
                 lastSentData = 0;
             }
@@ -227,14 +261,31 @@ class Program
             if (connectedPlayers[i] != null)
                 connectedPlayers[i].Update(deltaTime);
         }
+
+        for (int i = 0; i < remnants.Count; i++)
+        {
+            if (remnants[i] != null)
+                remnants[i].Update(deltaTime);
+        }
     }
 
-    public static void ReportDestroyedTrail(int id)
+    static void CreateRemnant(Vector2 pos, float size, float angle, int ownerId, Player creator)
     {
-        NetOutgoingMessage message = server.CreateMessage();
-        message.Write((byte)ShapeCustomNetMessageType.DestroyedTrail);
-        message.Write(id);
-        server.SendMessage(message, GetRecipients(-1),NetDeliveryMethod.ReliableUnordered,0);
+        NetworkCollisionRemnant newRemnant = new NetworkCollisionRemnant(pos, size, angle, ownerId, Color.GhostWhite, physicsWorld, creator);
+        newRemnant.OnDestroy += RemoveRemnant;
+        remnants.Add(newRemnant);
+    }
+
+    static void RemoveRemnant(int id)
+    {
+        for (int i = 0; i < remnants.Count; i++)
+        {
+            if (remnants[i].Id == id)
+            {
+                remnants.RemoveAt(i);
+                break;
+            }
+        }
     }
 
     //Called when a player connects

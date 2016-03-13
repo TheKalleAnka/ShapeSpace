@@ -11,7 +11,14 @@ public static class InputManager
     static MouseState currentMouseState;
     static MouseState prevMouseState;
 
+    public static bool GameIsActive { get; private set; }
+
     //static Actor reserveInput = null;
+
+    public static void SetActive(bool isActive)
+    {
+        GameIsActive = isActive;
+    }
 
     public static void Update(GameTime gameTime)
     {
@@ -26,40 +33,45 @@ public static class InputManager
 
     public static bool IsKeyTriggered(Keys key)
     {
-        if (currentKeyState.IsKeyDown(key) && !prevKeyState.IsKeyDown(key))
-            return true;
+        if (GameIsActive)
+            if (currentKeyState.IsKeyDown(key) && !prevKeyState.IsKeyDown(key))
+                return true;
 
         return false;
     }
 
     public static bool IsKeyPressed(Keys key)
     {
-        if (currentKeyState.IsKeyDown(key))
-            return true;
+        if (GameIsActive)
+            if (currentKeyState.IsKeyDown(key))
+                return true;
 
         return false;
     }
 
     public static bool IsKeyReleased(Keys key)
     {
-        if (!currentKeyState.IsKeyDown(key) && prevKeyState.IsKeyDown(key))
-            return true;
+        if (GameIsActive)
+            if (!currentKeyState.IsKeyDown(key) && prevKeyState.IsKeyDown(key))
+                return true;
 
         return false;
     }
 
     public static bool IsMouseButtonTriggered()
     {
-        if (currentMouseState.LeftButton == ButtonState.Pressed && prevMouseState.LeftButton != ButtonState.Pressed)
-            return true;
+        if(GameIsActive)
+            if (currentMouseState.LeftButton == ButtonState.Pressed && prevMouseState.LeftButton != ButtonState.Pressed)
+                return true;
 
         return false;
     }
 
     public static bool IsMouseButtonReleased()
     {
-        if (currentMouseState.LeftButton == ButtonState.Released && prevMouseState.LeftButton == ButtonState.Pressed)
-            return true;
+        if (GameIsActive)
+            if (currentMouseState.LeftButton == ButtonState.Released && prevMouseState.LeftButton == ButtonState.Pressed)
+                return true;
 
         return false;
     }

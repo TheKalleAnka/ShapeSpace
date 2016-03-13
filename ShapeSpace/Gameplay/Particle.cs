@@ -14,8 +14,10 @@ namespace ShapeSpace.Gameplay
         public event ParticleCallbackEventHandler OnDestroy;
 
         public int Id;
+        public int OwnerId;
         public float size;
         public Vector2 position;
+        public bool canCollideWithOwner = false;
 
         protected Color color;
         protected Texture2D texture;
@@ -34,7 +36,7 @@ namespace ShapeSpace.Gameplay
             }
             if(creator != null)
             {
-                creator.power -= size / 500f;
+                //creator.power -= size / 500f;
             }
         }
 

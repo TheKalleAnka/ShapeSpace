@@ -1,19 +1,19 @@
-﻿using Microsoft.Xna.Framework;
-using FarseerPhysics.Dynamics;
-using Lidgren.Network;
+﻿using System.Collections.Generic;
+using FarseerPhysics;
 using FarseerPhysics.Collision.Shapes;
 using FarseerPhysics.Common;
-using System.Collections.Generic;
+using FarseerPhysics.Dynamics;
 using FarseerPhysics.Dynamics.Contacts;
-using FarseerPhysics;
+using FarseerPhysics.Factories;
+using Lidgren.Network;
+using Microsoft.Xna.Framework;
+using ShapeSpace.Classes;
+using ShapeSpace.Gameplay;
 
 namespace ShapeSpace.Network
 {
     public class NetworkPlayer : Player
     {
-        public delegate void CollisionWithTrail(float amount);
-        public event CollisionWithTrail OnCollisionWithTrail;
-
         public List<InputWithTime> inputs = new List<InputWithTime>();
         private float lastChangedInput = 0;
 
@@ -24,57 +24,35 @@ namespace ShapeSpace.Network
         public Body body;
         private World world;
 
-        public NetworkPlayer(ref World world, NetConnection connection, Vector2 position) : base(null)
+        private ShapeClass shapeClass;
+
+        public delegate void CreateRemnantEventHandler(Vector2 pos, float size, float angle, int ownerId, Player creator);
+        public event CreateRemnantEventHandler OnCreateRemnant;
+
+        public NetworkPlayer(World world, NetConnection connection, Vector2 position) : base(null)
         {
             this.world = world;
             this.netConnection = connection;
 
-            body = new Body(world, position);
+            body = BodyFactory.CreateBody(world);
             body.BodyType = BodyType.Dynamic;
             body.FixedRotation = true;
-            body.Position = position;
-            body.Restitution = 10;
+            body.Position = ConvertUnits.ToSimUnits(position);
+            body.Friction = 0;
             body.UserData = this;
+            body.IsBullet = true;
 
-            Vertices verts = new Vertices();
-            verts.Add(new Vector2(-ConvertUnits.ToSimUnits(power / 2f), ConvertUnits.ToSimUnits(power / 2f)));
-            verts.Add(new Vector2(-ConvertUnits.ToSimUnits(power / 2f), -ConvertUnits.ToSimUnits(power / 2f)));
-            verts.Add(new Vector2(ConvertUnits.ToSimUnits(power / 2f), -ConvertUnits.ToSimUnits(power / 2f)));
-            verts.Add(new Vector2(ConvertUnits.ToSimUnits(power / 2f), ConvertUnits.ToSimUnits(power / 2f)));
+            CreateFixture();
 
-            PolygonShape s = new PolygonShape(verts, 0);
-
-            body.CreateFixture(s);
-
+            body.CollidesWith = Category.Cat1;
+            body.CollisionCategories = Category.Cat1;
             body.OnCollision += body_OnCollision;
-        }
-        
-        bool body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
-        {
-            //System.Console.WriteLine((fixtureA.Body.UserData.GetType()).ToString() + " " + (fixtureB.Body.UserData.GetType()).ToString());
-
-            //Does not work due to the other fixture reporting userdata that is System.Single. Unknown why. EDIT: Now fixed!
-            if(fixtureA.Body.UserData as NetworkPlayer != null && fixtureB.Body.UserData as NetworkPlayer != null)
-            {
-                //Fixture otherFixture = (fixtureA.Body.UserData as NetworkPlayer).indexOnServer != this.indexOnServer ? fixtureA : fixtureB;
-
-                //power += ((NetworkTrail)(otherFixture.Body.UserData)).size;
-
-                //return false;
-            }
-
-            return true;
         }
 
         public void Update(float deltaTime)
         {
             lastChangedInput += deltaTime;
-            /*
-            //Remove the first occurence if it has overlived it's time
-            if (inputs.Count >= 2)
-                if (lastChangedInput >= inputs[1].TimeSincePrevious)
-                    inputs.RemoveAt(0);
-            */
+
             if (inputs.Count >= 2)
             {
                 float behindInTime = 0;
@@ -90,30 +68,91 @@ namespace ShapeSpace.Network
                 }
             }
 
+            //Actual movement occurs here
+            //The class determines how quickly the player accelerates
             if (inputs.Count >= 1)
-                //body.Position += inputs[0].Input;
-                body.ApplyForce(inputs[0].Input * 5f);
+                body.ApplyForce(inputs[0].Input * shapeClass.acceleration);
 
-            //System.Console.WriteLine(body.LinearVelocity);
-
-            if (Vector2.Distance(positionLastAddedTrail, ConvertUnits.ToDisplayUnits(body.Position)) > 3f)
-                CreateNewRowOfTrail(ConvertUnits.ToDisplayUnits(body.Position), power * 2f/3f, trail.Count);
-
+            //Create the trail if the class allows it
+            if(shapeClass.doesCreateTrail)
+                if (Vector2.Distance(positionLastAddedTrail, ConvertUnits.ToDisplayUnits(body.Position)) > power * 5f/6f)
+                    CreateNewRowOfTrail(ConvertUnits.ToDisplayUnits(body.Position), power * 2f/3f, trail.Count);
+            
             for(int i = 0; i < trail.Count; i++)
             {
                 trail[i].Update(deltaTime);
             }
         }
 
+        bool body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            //Check which fixture is us and which is the fixture we collided with
+            Fixture otherFixture = (fixtureA.Body.UserData as NetworkPlayer).indexOnServer == this.indexOnServer ? fixtureB : fixtureA;
+
+            //Handles when we collide with another player
+            if (otherFixture.Body.UserData as NetworkPlayer != null)
+            {
+                for (float angle = 0; angle < 360; angle += 6)
+                {
+                    if (OnCreateRemnant != null)
+                        OnCreateRemnant(ConvertUnits.ToDisplayUnits(body.Position), power / 10f, angle, indexOnServer, this);
+                }
+                contact.Restitution = 0.5f;
+
+                return true;
+            }
+            else if(otherFixture.Body.UserData as Particle != null)
+            {
+                Particle particle = otherFixture.Body.UserData as Particle;
+
+                if (indexOnServer != particle.OwnerId || particle.canCollideWithOwner)
+                {
+                    AddPower(particle.size / 10f);
+                    particle.size = 0;
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         public void CreateNewRowOfTrail(Vector2 pos, float size, int id)
         {
-            NetworkTrail newTrail = new NetworkTrail(pos, size, body.FixtureList[0].FixtureId, Color.Blue, world, this);
+            NetworkTrail newTrail = new NetworkTrail(pos, size, indexOnServer, Color.Blue, world, this);
             newTrail.Id = id;
             newTrail.body.UserData = indexOnServer;
             newTrail.OnDestroy += DestroyTrail;
             trail.Add(newTrail);
 
             positionLastAddedTrail = ConvertUnits.ToDisplayUnits(body.Position);
+        }
+
+        void CreateFixture()
+        {
+            if(body.FixtureList.Count > 0)
+            {
+                body.DestroyFixture(body.FixtureList[0]);
+                return;
+            }
+            
+            body.CreateFixture(CreateShape());
+        }
+
+        PolygonShape CreateShape()
+        {
+            Vertices verts = new Vertices();
+            verts.Add(new Vector2(-ConvertUnits.ToSimUnits(power / 2f), ConvertUnits.ToSimUnits(power / 2f)));
+            verts.Add(new Vector2(-ConvertUnits.ToSimUnits(power / 2f), -ConvertUnits.ToSimUnits(power / 2f)));
+            verts.Add(new Vector2(ConvertUnits.ToSimUnits(power / 2f), -ConvertUnits.ToSimUnits(power / 2f)));
+            verts.Add(new Vector2(ConvertUnits.ToSimUnits(power / 2f), ConvertUnits.ToSimUnits(power / 2f)));
+
+            return new PolygonShape(verts, 0);
+        }
+
+        public void SetClass(ShapeClass type)
+        {
+            shapeClass = type;
         }
 
         public void AddPower(float amount)

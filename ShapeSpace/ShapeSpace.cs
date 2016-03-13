@@ -77,6 +77,11 @@ namespace ShapeSpace
         protected override void Update(GameTime gameTime)
         {
             ///INPUT
+            if (InputManager.GameIsActive && !IsActive)
+                InputManager.SetActive(false);
+            else if (!InputManager.GameIsActive && IsActive)
+                InputManager.SetActive(true);
+
             InputManager.Update(gameTime);
 
             MouseState mouseState = Mouse.GetState();
@@ -84,7 +89,7 @@ namespace ShapeSpace
             if (GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (mouseState.LeftButton == ButtonState.Pressed)
+            if (InputManager.IsMouseButtonTriggered())
                 UIComponent.Instance.OnClick(new Vector2(mouseState.X, mouseState.Y));
             ///END INPUT
             
@@ -118,7 +123,11 @@ namespace ShapeSpace
             switch(id)
             {
                 case "BUTTON_START_GAME":
-                    gc.ConnectToServer("127.0.0.1");
+                    ConnectToServerForm connectForm = new ConnectToServerForm();
+                    if(connectForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        gc.ConnectToServer(connectForm.tbxIP.Text.Trim(), Convert.ToInt32(connectForm.tbxPort.Text.Trim()));
+                    }
                     break;
                 case "BUTTON_QUIT_GAME":
                     this.Exit();
