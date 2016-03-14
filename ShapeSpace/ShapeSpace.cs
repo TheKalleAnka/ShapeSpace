@@ -123,11 +123,13 @@ namespace ShapeSpace
             switch(id)
             {
                 case "BUTTON_START_GAME":
+                    /*
                     ConnectToServerForm connectForm = new ConnectToServerForm();
                     if(connectForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
                         gc.ConnectToServer(connectForm.tbxIP.Text.Trim(), Convert.ToInt32(connectForm.tbxPort.Text.Trim()));
-                    }
+                    }*/
+                    gc.DiscoverLocalServers();
                     break;
                 case "BUTTON_QUIT_GAME":
                     this.Exit();

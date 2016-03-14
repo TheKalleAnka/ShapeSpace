@@ -66,6 +66,8 @@ namespace ShapeSpace.Network
             {
                 body.CollidesWith = Category.Cat1;
                 body.CollisionCategories = Category.Cat1;
+
+                canCollideWithOwner = true;
             }
             else
                 enableCollisionCountdownTimer -= deltaTime;

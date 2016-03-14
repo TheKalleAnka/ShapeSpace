@@ -37,6 +37,13 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     public void Initialize()
     {
         player = new Player(spriteBatch.GraphicsDevice);
+
+        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
+        config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
+        client = new NetClient(config);
+        client.Start();
+        //The received messages should be handled in a message loop in update #ThisIsTemporary
+        client.RegisterReceivedCallback(HandleClientMessages);
     }
 
     //The font used when writing things on the screen
@@ -141,13 +148,12 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// <param name="ip">The IP of the server</param>
     public void ConnectToServer(string ip, int port)
     {
-        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
-        config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
-        client = new NetClient(config);
-        client.Start();
-        //The received messages should be handled in a message loop in update #ThisIsTemporary
-        client.RegisterReceivedCallback(HandleClientMessages);
         client.Connect(ip,port);
+    }
+
+    public void DiscoverLocalServers()
+    {
+        client.DiscoverLocalPeers(55678);
     }
 
     void HandleClientMessages(object peer)
@@ -298,10 +304,10 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                     }
                     break;
                 case NetIncomingMessageType.DiscoveryResponse:
-                    MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
+                    //MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
 
                     if (client.GetConnection(msg.SenderEndPoint) == null)
-                        client.Connect(msg.SenderEndPoint);
+                        ConnectToServer(msg.SenderEndPoint.Address.ToString(),55678);
                     break;
                 case NetIncomingMessageType.StatusChanged:
                     switch ((NetConnectionStatus)msg.ReadByte())
