@@ -21,7 +21,9 @@ namespace ShapeSpace.Network
         public string Username { get; private set; }
         //public int PlayerIndex { get; set; }
 
+        //The body that interacts in the physicsworld
         public Body body;
+        //Container object for the world
         private World world;
 
         private ShapeClass shapeClass;
@@ -34,6 +36,7 @@ namespace ShapeSpace.Network
             this.world = world;
             this.netConnection = connection;
 
+            //Define the body
             body = BodyFactory.CreateBody(world);
             body.BodyType = BodyType.Dynamic;
             body.FixedRotation = true;
@@ -42,11 +45,11 @@ namespace ShapeSpace.Network
             body.UserData = this;
             body.IsBullet = true;
 
-            CreateFixture();
-
             body.CollidesWith = Category.Cat1;
             body.CollisionCategories = Category.Cat1;
-            body.OnCollision += body_OnCollision;
+
+            //Give the body its starting fixture
+            CreateFixture();
         }
 
         public void Update(float deltaTime)
@@ -75,15 +78,22 @@ namespace ShapeSpace.Network
 
             //Create the trail if the class allows it
             if(shapeClass.doesCreateTrail)
-                if (Vector2.Distance(positionLastAddedTrail, ConvertUnits.ToDisplayUnits(body.Position)) > power * 5f/6f)
-                    CreateNewRowOfTrail(ConvertUnits.ToDisplayUnits(body.Position), power * 2f/3f, trail.Count);
-            
+                if (Vector2.Distance(positionLastAddedTrail, ConvertUnits.ToDisplayUnits(body.Position)) > power * 0.5f)
+                    CreateNewRowOfTrail(ConvertUnits.ToDisplayUnits(body.Position), power, trail.Count);
+           
             for(int i = 0; i < trail.Count; i++)
             {
                 trail[i].Update(deltaTime);
             }
         }
 
+        /// <summary>
+        /// Handles what happens when colliding with objects
+        /// </summary>
+        /// <param name="fixtureA"></param>
+        /// <param name="fixtureB"></param>
+        /// <param name="contact"></param>
+        /// <returns>True if the objects should collide, false if they should pass through each other</returns>
         bool body_OnCollision(Fixture fixtureA, Fixture fixtureB, Contact contact)
         {
             //Check which fixture is us and which is the fixture we collided with
@@ -97,7 +107,7 @@ namespace ShapeSpace.Network
                     if (OnCreateRemnant != null)
                         OnCreateRemnant(ConvertUnits.ToDisplayUnits(body.Position), power / 10f, angle, indexOnServer, this);
                 }
-                contact.Restitution = 0.5f;
+                contact.Restitution = 1;
 
                 return true;
             }
@@ -107,7 +117,7 @@ namespace ShapeSpace.Network
 
                 if (indexOnServer != particle.OwnerId || particle.canCollideWithOwner)
                 {
-                    AddPower(particle.size / 10f);
+                    //SetPower(power + particle.size / 10f);
                     particle.size = 0;
                 }
 
@@ -117,6 +127,17 @@ namespace ShapeSpace.Network
             return true;
         }
 
+        void body_OnSeparation(Fixture fixtureA, Fixture fixtureB)
+        {
+            //CreateFixture();
+        }
+
+        /// <summary>
+        /// Creates a new trail particle
+        /// </summary>
+        /// <param name="pos">The position in world draw coordinates</param>
+        /// <param name="size">The size in pixels</param>
+        /// <param name="id"></param>
         public void CreateNewRowOfTrail(Vector2 pos, float size, int id)
         {
             NetworkTrail newTrail = new NetworkTrail(pos, size, indexOnServer, Color.Blue, world, this);
@@ -128,17 +149,28 @@ namespace ShapeSpace.Network
             positionLastAddedTrail = ConvertUnits.ToDisplayUnits(body.Position);
         }
 
+        /// <summary>
+        /// Creates the fixture from a shape and attaches it to the player
+        /// The fixture is the collision object
+        /// </summary>
         void CreateFixture()
         {
             if(body.FixtureList.Count > 0)
             {
                 body.DestroyFixture(body.FixtureList[0]);
-                return;
+                //return;
             }
             
             body.CreateFixture(CreateShape());
+            //body.FixtureList[0].OnCollision += body_OnCollision;
+            body.OnCollision += body_OnCollision;
+            body.OnSeparation += body_OnSeparation;
         }
 
+        /// <summary>
+        /// Creates a PolygonShape that corresponds to the size of the player
+        /// </summary>
+        /// <returns></returns>
         PolygonShape CreateShape()
         {
             Vertices verts = new Vertices();
@@ -150,16 +182,31 @@ namespace ShapeSpace.Network
             return new PolygonShape(verts, 0);
         }
 
+        /// <summary>
+        /// Sets the class and all corresponding values
+        /// </summary>
+        /// <param name="type">The class</param>
         public void SetClass(ShapeClass type)
         {
             shapeClass = type;
+
+            SetPower(shapeClass.startPower);
+
+            CreateFixture();
         }
 
-        public void AddPower(float amount)
+        public void SetPower(float amount)
         {
-            power += amount;
+            power = amount;
+
+            //Update the fixture with the new size
+            //CreateFixture();
         }
 
+        /// <summary>
+        /// Set the username of the player
+        /// </summary>
+        /// <param name="name"></param>
         public void SetUserName(string name)
         {
             Username = name;

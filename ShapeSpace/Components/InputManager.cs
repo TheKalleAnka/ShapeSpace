@@ -76,6 +76,24 @@ public static class InputManager
         return false;
     }
 
+    public static bool IsScrollingMouseWheelIn()
+    {
+        if (GameIsActive)
+            if (currentMouseState.ScrollWheelValue - prevMouseState.ScrollWheelValue < 0)
+                return true;
+
+        return false;
+    }
+
+    public static bool IsScrollingMouseWheelOut()
+    {
+        if (GameIsActive)
+            if (currentMouseState.ScrollWheelValue - prevMouseState.ScrollWheelValue > 0)
+                return true;
+
+        return false;
+    }
+
     /// <summary>
     /// (NOT IMPLEMENTED)Provides classes with a framework for receiving all key presses as they are pressed down
     /// </summary>

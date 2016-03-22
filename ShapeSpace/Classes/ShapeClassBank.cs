@@ -11,7 +11,8 @@ namespace ShapeSpace.Classes
         public ShapeClassBank()
         {
             acceleration = 2f;
-            doesCreateTrail = false;
+            startPower = 100f;
+            doesCreateTrail = true;
         }
     }
 }

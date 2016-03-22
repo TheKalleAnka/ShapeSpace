@@ -42,7 +42,7 @@ class Program
         NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
         config.Port = 55678;
         config.MaximumConnections = maxPlayers;
-        config.ConnectionTimeout = 100;
+        config.ConnectionTimeout = 10;
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
 
@@ -117,6 +117,7 @@ class Program
                                     ShapeTeamContainer newPlayerTeam = greenTeam.GetNumberOfMembers() < redTeam.GetNumberOfMembers() ? greenTeam : redTeam;
                                     bool isBank = newPlayerTeam.AddPlayer(newPlayer.indexOnServer);
                                     newPlayer.SetTeam(newPlayerTeam.GetTeam());
+                                    newPlayer.body.Position = ConvertUnits.ToSimUnits(newPlayerTeam.basePosition);
 
                                     if (isBank)
                                         newPlayer.SetClass(new ShapeClassBank());

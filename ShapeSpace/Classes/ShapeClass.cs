@@ -15,6 +15,7 @@ namespace ShapeSpace.Classes
         public float collisionModifier = 0.05f;
         //public float speed;
         public float acceleration = 10f;
+        public float startPower = 10f;
         public float bounciness = 0.5f;
         public bool doesCreateTrail = false;
     }

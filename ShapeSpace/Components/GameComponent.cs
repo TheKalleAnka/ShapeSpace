@@ -28,6 +28,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     float lastSentInput = 0;
     //Number of times every second that the game will send the current inputs to the server
     const float sentInputPackagesPerSecond = 20;
+    float lastReceivedLocationUpdate = 0;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
     {
@@ -90,6 +91,13 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             lastSentInput = 0;
         }
 
+        //Zoom camera in and out
+        if (InputManager.IsScrollingMouseWheelIn() && camera.Zoom > 0.2f)
+            camera.Zoom -= 0.1f;
+        if (InputManager.IsScrollingMouseWheelOut())
+            camera.Zoom += 0.1f;
+        UIComponent.Instance._DebugString = camera.Zoom.ToString();
+
         //Update the local player
         if(player != null)
             player.Update(gameTime);
@@ -103,9 +111,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             }
 
         //Set the camera to the players position when the player is created and don't move it afterward
-        if (!tempTest && player != null)
+        if (player != null)
         {
-            camera.Position = player.positionNow - camera.Origin + new Vector2(player.power / 2f, player.power / 2f);
+            camera.Position = player.positionNow - camera.Origin;
             tempTest = true;
         }
         //UIComponent.Instance._DebugString
@@ -151,6 +159,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         client.Connect(ip,port);
     }
 
+    /// <summary>
+    /// Find servers on the LAN to connect to
+    /// </summary>
     public void DiscoverLocalServers()
     {
         client.DiscoverLocalPeers(55678);
@@ -203,6 +214,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                             {
                                                 player.trail[j].position = position;
                                                 player.trail[j].size = size;
+                                                player.trail[j].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
                                             }
 
                                             if (numTrail < player.trail.Count)
@@ -211,6 +223,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                         else
                                         {
                                             Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            t.lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
                                             player.trail.Add(t);
                                         }
                                     }
@@ -222,6 +235,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                             {
                                                 playersOnSameServer[index].trail[j].position = position;
                                                 playersOnSameServer[index].trail[j].size = size;
+                                                playersOnSameServer[index].trail[j].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
                                             }
 
                                             if (numTrail < playersOnSameServer[index].trail.Count)
@@ -230,6 +244,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                         else
                                         {
                                             Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            t.lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
                                             playersOnSameServer[index].trail.Add(t);
                                         }
                                     }
@@ -247,6 +262,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 {
                                     remnants[i].position = pos;
                                     remnants[i].size = size;
+                                    remnants[i].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
                                 }
                                 else
                                 {
@@ -257,6 +273,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 if (numRemnants < remnants.Count)
                                     remnants.RemoveRange(numRemnants - 1, remnants.Count - numRemnants);
                             }
+
+                            lastReceivedLocationUpdate = System.Environment.TickCount;
                             break;
                         //A new player has joined the server which has to be added to this client
                         case ShapeCustomNetMessageType.NewPlayerJoined:
@@ -344,6 +362,13 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             }
             client.Recycle(msg);
         }
+    }
+
+    public void ManualDisconnect()
+    {
+        client.Disconnect("Manual disconnect by client");
+
+        HandleDisconnection();
     }
 
     void HandleDisconnection()

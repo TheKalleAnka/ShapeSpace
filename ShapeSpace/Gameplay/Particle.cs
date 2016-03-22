@@ -16,7 +16,12 @@ namespace ShapeSpace.Gameplay
         public int Id;
         public int OwnerId;
         public float size;
+        float currentSize;
         public Vector2 position;
+        Vector2 currentPosition;
+
+        public float lastUpdatedValues = -1;
+
         public bool canCollideWithOwner = false;
 
         protected Color color;
@@ -26,7 +31,9 @@ namespace ShapeSpace.Gameplay
         protected Particle(Vector2 pos, float size, Color color, GraphicsDevice gDev, Player creator)
         {
             this.position = pos;
+            this.currentPosition = pos;
             this.size = size;
+            this.currentSize = size;
             this.color = color;
 
             if (gDev != null)
@@ -47,15 +54,23 @@ namespace ShapeSpace.Gameplay
         /// <param name="sb">The SpriteBatch used to draw the game</param>
         public void Draw(ref SpriteBatch sb)
         {
+            currentSize = size;
+
             //Prevents NullReferenceException
             if (texture != null)
-                sb.Draw(texture, position: position - new Vector2(size / 2f, size / 2f), scale: new Vector2(size, size), color: color);
+                sb.Draw(texture, position: position - new Vector2(size / 2f, size / 2f), scale: new Vector2(currentSize, currentSize), color: color);
         }
 
         public virtual void Update(float deltaTime)
         {
             if (size <= 0)
                 Destroy();
+
+            if(lastUpdatedValues != -1)
+            {
+                //currentPosition = Vector2.Lerp(currentPosition, position, MathHelper.Clamp(deltaTime / lastUpdatedValues, 0, 1));
+                currentSize = currentSize + (size - currentSize) * MathHelper.Clamp(deltaTime / lastUpdatedValues, 0, 1);
+            }
         }
 
         /// <summary>

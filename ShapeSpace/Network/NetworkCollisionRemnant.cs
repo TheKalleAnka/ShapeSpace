@@ -44,7 +44,7 @@ namespace ShapeSpace.Network
             body.CollisionCategories = Category.Cat2;
             //body.OnSeparation += body_OnSeparation;
             
-            body.ApplyLinearImpulse(new Vector2((float)Math.Cos(angleOfStartForce),(float)Math.Sin(angleOfStartForce)) * 3f);
+            body.ApplyLinearImpulse(new Vector2((float)Math.Cos(angleOfStartForce),(float)Math.Sin(angleOfStartForce)) * 10f);
         }
 
         void body_OnSeparation(Fixture fixtureA, Fixture fixtureB)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using ShapeSpace.Network;
 
 namespace ShapeSpace.Gameplay
@@ -10,9 +11,16 @@ namespace ShapeSpace.Gameplay
         List<int> playersOnTeam = new List<int>();
         int playerWhoIsBank = -1;
 
+        public Vector2 basePosition { get; private set; }
+
         public ShapeTeamContainer(ShapeTeam team)
         {
             this.team = team;
+
+            if (GetTeam() == ShapeTeam.GREEN)
+                basePosition = new Vector2(-1000, 0);
+            else
+                basePosition = new Vector2(1000, 0);
         }
 
         /// <summary>

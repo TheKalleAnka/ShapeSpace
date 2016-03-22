@@ -80,7 +80,6 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
 
     public void Update(GameTime gameTime)
     {
-        
     }
 
     void LocalUICallback(string id)
@@ -130,7 +129,7 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
     {
         Menu menu = new Menu();
 
-        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.LimeGreen, Color.White, font, "BUTTON_RETURN_TO_PLAY", "RESUME");
+        Button item = new Button(ref spriteBatch, new Rectangle(50, 50, 100, 30), Color.LimeGreen, Color.White, font, "BUTTON_DISCONNECT", "DISCONNECT");
         item.Callback += callbackShell;
         menu.AddItem(item);
 

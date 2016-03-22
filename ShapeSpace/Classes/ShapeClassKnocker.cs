@@ -12,7 +12,8 @@ namespace ShapeSpace.Classes
         {
             collisionModifier = 0f;
             acceleration = 15f;
-            doesCreateTrail = false;
+            startPower = 20f;
+            doesCreateTrail = true;
         }
     }
 }

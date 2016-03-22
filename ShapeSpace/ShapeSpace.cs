@@ -100,7 +100,7 @@ namespace ShapeSpace
             base.Update(gameTime);
 
             //Show the FPS
-            UIComponent.Instance._DebugString = (Convert.ToInt16(1 / gameTime.ElapsedGameTime.TotalSeconds)).ToString();
+            //UIComponent.Instance._DebugString = (Convert.ToInt16(1 / gameTime.ElapsedGameTime.TotalSeconds)).ToString();
         }
 
         /// <summary>
@@ -133,6 +133,10 @@ namespace ShapeSpace
                     break;
                 case "BUTTON_QUIT_GAME":
                     this.Exit();
+                    break;
+                case "BUTTON_DISCONNECT":
+                    gc.ManualDisconnect();
+                    UIComponent.Instance.ShowMainMenu();
                     break;
             }
         }

@@ -91,9 +91,11 @@ public class Player : ILoadable, IUpdateable
             //TimeSincePrevious thus adds to the input lag on top of the latency
             if(positions.Count > 0)
                 positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp((float)gameTime.ElapsedGameTime.TotalSeconds / positions[0].TimeSincePrevious - 0.1f,0,1));
-            /*
-            if (Vector2.Distance(positionLastAddedTrail, positionNow) > 3f)
-                CreateNewRowOfTrail();*/
+
+            /*for (int i = 0; i < trail.Count; i++)
+            {
+                trail[i].Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            }*/
         }
         catch { }
         /*
