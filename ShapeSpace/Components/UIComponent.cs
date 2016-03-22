@@ -15,7 +15,7 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
     /// </summary>
     public SpriteBatch spriteBatch;
 
-    private Camera camera;
+    //private Camera camera;
 
     public void UpdateGameState(GameStates newGameState)
     {
@@ -73,14 +73,13 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
         if (currentMenu != null)
             currentMenu.Draw(gameTime);
 
-        spriteBatch.DrawString(font, _DebugString, Vector2.Zero, Color.White);
+        spriteBatch.DrawString(font, _DebugString, Vector2.Zero, Color.White, 0, Vector2.Zero, 0.5f, SpriteEffects.None, 0);
 
         spriteBatch.End();
     }
 
     public void Update(GameTime gameTime)
     {
-        
     }
 
     void LocalUICallback(string id)
@@ -113,12 +112,12 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
     {
         Menu menu = new Menu();
 
-        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_START_GAME", "Play");
+        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.LimeGreen, Color.Black, font, "BUTTON_START_GAME", "PLAY");
         item.Callback += callbackShell;
         item.Callback += LocalUICallback;
         menu.AddItem(item);
 
-        item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.Yellow, Color.White, font, "BUTTON_QUIT_GAME", "Quit");
+        item = new Button(ref spriteBatch, new Rectangle(100, 300, 100, 30), Color.OrangeRed, Color.Black, font, "BUTTON_QUIT_GAME", "QUIT");
         item.Callback += callbackShell;
         item.Callback += LocalUICallback;
         menu.AddItem(item);
@@ -130,7 +129,7 @@ class UIComponent : IDrawable, IUpdateable, IMenuClickable, ILoadable
     {
         Menu menu = new Menu();
 
-        Button item = new Button(ref spriteBatch, new Rectangle(100, 100, 200, 50), Color.ForestGreen, Color.White, font, "BUTTON_RETURN_TO_PLAY", "Resume");
+        Button item = new Button(ref spriteBatch, new Rectangle(50, 50, 100, 30), Color.LimeGreen, Color.White, font, "BUTTON_DISCONNECT", "DISCONNECT");
         item.Callback += callbackShell;
         menu.AddItem(item);
 

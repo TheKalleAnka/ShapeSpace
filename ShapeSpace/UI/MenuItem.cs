@@ -20,6 +20,7 @@ namespace ShapeSpace.UI
         public MenuItem(ref SpriteBatch spriteBatch)
         {
             this.spriteBatch = spriteBatch;
+
             this.texture = new Texture2D(spriteBatch.GraphicsDevice, 1, 1);
             this.texture.SetData<Color>(new[] { Color.White });
         }

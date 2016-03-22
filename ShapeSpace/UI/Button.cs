@@ -11,6 +11,11 @@ namespace ShapeSpace.UI
         /// </summary>
         string buttonID { get; set; }
 
+        int posX;
+        int posY;
+        int sizeX;
+        int sizeY;
+
         //FEEDBACK
         float scale = 1f;
         bool hasBeenPressed = false;
@@ -41,13 +46,17 @@ namespace ShapeSpace.UI
                 hasBeenPressed = false;
             }
 
-            int posX = Convert.ToInt32(rectangle.X + ((1 - scale) * 0.5f * rectangle.Width));
-            int posY = Convert.ToInt32(rectangle.Y + ((1 - scale) * 0.5f * rectangle.Height));
-            int sizeX = Convert.ToInt32(rectangle.Width * scale);
-            int sizeY = Convert.ToInt32(rectangle.Height * scale);
+            Vector2 fontSize = font.MeasureString(text);
+
+            sizeX = Convert.ToInt32(/*rectangle.Width * scale*/fontSize.X * scale + 20);
+            sizeY = Convert.ToInt32(/*rectangle.Height * scale*/fontSize.Y * scale + 20);
+
+            //Makes it decrease size towards the center
+            posX = Convert.ToInt32(rectangle.X + ((1 - scale) * 0.5f * rectangle.Width));
+            posY = Convert.ToInt32(rectangle.Y + ((1 - scale) * 0.5f * rectangle.Height));
 
             spriteBatch.Draw(texture, new Rectangle(posX, posY, sizeX, sizeY), baseColor);
-            spriteBatch.DrawString(font, this.text, new Vector2(this.rectangle.X, this.rectangle.Y), this.textColor);
+            spriteBatch.DrawString(font, text, new Vector2(posX + 10 * scale, posY + 10 * scale), textColor, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
         }
 
         public void OnClick(Vector2 pos)
@@ -56,6 +65,17 @@ namespace ShapeSpace.UI
             {
                 hasBeenPressed = true;
             }
+        }
+
+        new bool IsPressOnThisItem(Vector2 pos)
+        {
+            if (pos.X > posX &&
+               pos.X < posX + sizeX &&
+               pos.Y > posY &&
+               pos.Y < posY + sizeY)
+                return true;
+
+            return false;
         }
     }
 }

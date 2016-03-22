@@ -16,6 +16,8 @@ namespace ShapeSpace.Network
         SetupFailed,
         LocationUpdate,
         InputUpdate,
-        NewPlayerJoined
+        NewPlayerJoined,
+        CreatedTrail,
+        DestroyedTrail
     }
 }

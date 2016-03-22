@@ -1,9 +1,11 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 using Lidgren.Network;
 using Lidgren.Network.Xna;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using ShapeSpace.Gameplay;
 using ShapeSpace.Network;
 
 /// <summary>
@@ -13,7 +15,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
 {
     //GAMEPLAY
     Player player;
+    //A mirror of the array on the server and contains the player version of those on there
     Player[] playersOnSameServer;
+    List<CollisionRemnant> remnants = new List<CollisionRemnant>();
 
     //DRAWING
     ContentManager cManager;
@@ -23,7 +27,8 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     //When this reaches the desired value, an input package will be sent to the server
     float lastSentInput = 0;
     //Number of times every second that the game will send the current inputs to the server
-    const float sentInputPackagesPerSecond = 50;
+    const float sentInputPackagesPerSecond = 20;
+    float lastReceivedLocationUpdate = 0;
 
     public GameComponent(GraphicsDevice graphicsDevice) : base(graphicsDevice) 
     {
@@ -33,10 +38,22 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     public void Initialize()
     {
         player = new Player(spriteBatch.GraphicsDevice);
+
+        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
+        config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
+        client = new NetClient(config);
+        client.Start();
+        //The received messages should be handled in a message loop in update #ThisIsTemporary
+        client.RegisterReceivedCallback(HandleClientMessages);
     }
 
+    //The font used when writing things on the screen
     SpriteFont font;
 
+    /// <summary>
+    /// Called by the shell to load any necessary content
+    /// </summary>
+    /// <param name="cManager">The ContentManager reponsible for loading the content</param>
     public void LoadContent(ContentManager cManager)
     {
         this.cManager = cManager;
@@ -45,6 +62,9 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         font = cManager.Load<SpriteFont>("text");
     }
 
+    /// <summary>
+    /// Called by the shell when the game is closing to release resources
+    /// </summary>
     public void UnloadContent()
     {
         player.UnloadContent();
@@ -66,16 +86,40 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
             outMessage.Write(player.indexOnServer);
             outMessage.Write(lastSentInput);
             outMessage.Write(InputManager.GetMovementInputAsVector());
-            client.SendMessage(outMessage, NetDeliveryMethod.UnreliableSequenced);
+            client.SendMessage(outMessage, NetDeliveryMethod.UnreliableSequenced, 1);
 
             lastSentInput = 0;
         }
 
+        //Zoom camera in and out
+        if (InputManager.IsScrollingMouseWheelIn() && camera.Zoom > 0.2f)
+            camera.Zoom -= 0.1f;
+        if (InputManager.IsScrollingMouseWheelOut())
+            camera.Zoom += 0.1f;
+        UIComponent.Instance._DebugString = camera.Zoom.ToString();
+
+        //Update the local player
         if(player != null)
             player.Update(gameTime);
 
-        camera.Position = player.positionNow - camera.Origin + new Vector2(player.power/2f,player.power/2f);
+        //Update the other players
+        if(playersOnSameServer != null)
+            for (int i = 0; i < playersOnSameServer.Length; i++)
+            {
+                if (playersOnSameServer[i] != null)
+                    playersOnSameServer[i].Update(gameTime);
+            }
+
+        //Set the camera to the players position when the player is created and don't move it afterward
+        if (player != null)
+        {
+            camera.Position = player.positionNow - camera.Origin;
+            tempTest = true;
+        }
+        //UIComponent.Instance._DebugString
     }
+
+    bool tempTest = false;
 
     /// <summary>
     /// Draws the player
@@ -83,17 +127,23 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// <param name="gameTime"></param>
     public void Draw(GameTime gameTime)
     {
-        if(playersOnSameServer != null)
+        if (playersOnSameServer != null)
         {
             spriteBatch.Begin(transformMatrix: camera.GetViewMatrix());
 
+            for (int i = 0; i < remnants.Count; i++)
+            {
+                remnants[i].Draw(ref spriteBatch);
+            }
+
             if (player != null)
                 player.Draw(ref spriteBatch);
-            
+
             for (int i = 0; i < playersOnSameServer.Length; i++)
             {
                 if (playersOnSameServer[i] != null)
-                    playersOnSameServer[i].Draw(ref spriteBatch);
+                    if (playersOnSameServer[i].indexOnServer != player.indexOnServer)
+                        playersOnSameServer[i].Draw(ref spriteBatch);
             }
 
             spriteBatch.End();
@@ -104,15 +154,17 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
     /// Connects to the server
     /// </summary>
     /// <param name="ip">The IP of the server</param>
-    public void ConnectToServer(string ip)
+    public void ConnectToServer(string ip, int port)
     {
-        NetPeerConfiguration config = new NetPeerConfiguration("ShapeSpace");
-        config.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
-        client = new NetClient(config);
-        client.Start();
-        //The received messages should be handled in a message loop in update #ThisIsTemporary
-        client.RegisterReceivedCallback(HandleClientMessages);
-        client.Connect(ip,55678);
+        client.Connect(ip,port);
+    }
+
+    /// <summary>
+    /// Find servers on the LAN to connect to
+    /// </summary>
+    public void DiscoverLocalServers()
+    {
+        client.DiscoverLocalPeers(55678);
     }
 
     void HandleClientMessages(object peer)
@@ -132,20 +184,97 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             for (int i = 0; i < numOfPlayers; i++)
                             {
                                 int index = msg.ReadInt32();
+                                float powr = msg.ReadFloat();
                                 float time = msg.ReadFloat();
                                 Vector2 pos = msg.ReadVector2();
 
                                 if (index == player.indexOnServer)
                                 {
-                                    player.positions.Add(new PositionInTime(time, pos));
-                                    //player.positionNow = pos;
+                                    player.power = powr;
+                                    player.positions.Add(new PositionInTime(time, pos, false));
                                 }
                                 else if (playersOnSameServer[index] != null)
                                 {
-                                    playersOnSameServer[i].positions.Add(new PositionInTime(time, pos));
-                                    //playersOnSameServer[i].positionNow = pos;
+                                    playersOnSameServer[index].power = powr;
+                                    playersOnSameServer[index].positions.Add(new PositionInTime(time, pos, false));
+                                }
+
+                                int numTrail = msg.ReadInt32();
+
+                                for(int j = 0; j < numTrail; j++)
+                                {
+                                    Vector2 position = msg.ReadVector2();
+                                    float size = msg.ReadFloat();
+
+                                    if(index == player.indexOnServer)
+                                    {
+                                        if(j < player.trail.Count)
+                                        {
+                                            if (player.trail[j] != null)
+                                            {
+                                                player.trail[j].position = position;
+                                                player.trail[j].size = size;
+                                                player.trail[j].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
+                                            }
+
+                                            if (numTrail < player.trail.Count)
+                                                player.trail.RemoveRange(numTrail - 1,player.trail.Count - numTrail);
+                                        }
+                                        else
+                                        {
+                                            Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            t.lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
+                                            player.trail.Add(t);
+                                        }
+                                    }
+                                    else if (playersOnSameServer[index] != null)
+                                    {
+                                        if(j < playersOnSameServer[index].trail.Count)
+                                        {
+                                            if (playersOnSameServer[index].trail[j] != null)
+                                            {
+                                                playersOnSameServer[index].trail[j].position = position;
+                                                playersOnSameServer[index].trail[j].size = size;
+                                                playersOnSameServer[index].trail[j].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
+                                            }
+
+                                            if (numTrail < playersOnSameServer[index].trail.Count)
+                                                playersOnSameServer[index].trail.RemoveRange(numTrail - 1, playersOnSameServer[index].trail.Count - numTrail);
+                                        }
+                                        else
+                                        {
+                                            Trail t = new Trail(position, size, Color.Beige, spriteBatch.GraphicsDevice, null);
+                                            t.lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
+                                            playersOnSameServer[index].trail.Add(t);
+                                        }
+                                    }
                                 }
                             }
+
+                            int numRemnants = msg.ReadInt32();
+
+                            for (int i = 0; i < numRemnants; i++ )
+                            {
+                                Vector2 pos = msg.ReadVector2();
+                                float size = msg.ReadFloat();
+
+                                if(i < remnants.Count)
+                                {
+                                    remnants[i].position = pos;
+                                    remnants[i].size = size;
+                                    remnants[i].lastUpdatedValues = System.Environment.TickCount - lastReceivedLocationUpdate;
+                                }
+                                else
+                                {
+                                    CollisionRemnant newRemnant = new CollisionRemnant(pos, size, Color.GhostWhite, spriteBatch.GraphicsDevice, null);
+                                    remnants.Add(newRemnant);
+                                }
+
+                                if (numRemnants < remnants.Count)
+                                    remnants.RemoveRange(numRemnants - 1, remnants.Count - numRemnants);
+                            }
+
+                            lastReceivedLocationUpdate = System.Environment.TickCount;
                             break;
                         //A new player has joined the server which has to be added to this client
                         case ShapeCustomNetMessageType.NewPlayerJoined:
@@ -168,6 +297,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                         case ShapeCustomNetMessageType.SetupSuccessful:
                             //Have our index on server handed to us
                             player.indexOnServer = msg.ReadInt32();
+                            player.SetTeam((ShapeTeam)msg.ReadByte());
                             
                             int numOfPlayers1 = msg.ReadInt32();
 
@@ -177,20 +307,25 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                                 int index = msg.ReadInt32();
                                 p.indexOnServer = index;
                                 p.SetTeam((ShapeTeam)msg.ReadByte());
-                                p.power = msg.ReadInt32();
+
+                                int powaar = msg.ReadInt32();
+                                //p.power = powaar;
 
                                 p.LoadContent(cManager);
 
                                 playersOnSameServer[index] = p;
                             }
                             break;
+                        case ShapeCustomNetMessageType.SetupFailed:
+                            MessageBox.Show(msg.ReadString());
+                            break;
                     }
                     break;
                 case NetIncomingMessageType.DiscoveryResponse:
-                    MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
+                    //MessageBox.Show(msg.ReadString() + " | " + msg.ReadIPEndPoint() + " | " + msg.SenderEndPoint);
 
                     if (client.GetConnection(msg.SenderEndPoint) == null)
-                        client.Connect(msg.SenderEndPoint);
+                        ConnectToServer(msg.SenderEndPoint.Address.ToString(),55678);
                     break;
                 case NetIncomingMessageType.StatusChanged:
                     switch ((NetConnectionStatus)msg.ReadByte())
@@ -204,7 +339,7 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
                             //2. Send client info
                             NetOutgoingMessage outMsg = client.CreateMessage();
                             outMsg.Write((byte)ShapeCustomNetMessageType.SetupRequest);
-                            outMsg.Write((byte)ShapeTeam.BLUE);
+                            //outMsg.Write((byte)ShapeTeam.BLUE);
                             outMsg.Write("UserName");
                             client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
                             break;
@@ -229,11 +364,11 @@ class GameComponent : BaseComponent, IDrawable, IUpdateable, ILoadable, IInitial
         }
     }
 
-    void SendMessageToServer(string s)
+    public void ManualDisconnect()
     {
-        NetOutgoingMessage outmessage = client.CreateMessage();
-        outmessage.Write(s);
-        client.SendMessage(outmessage, NetDeliveryMethod.ReliableOrdered);
+        client.Disconnect("Manual disconnect by client");
+
+        HandleDisconnection();
     }
 
     void HandleDisconnection()

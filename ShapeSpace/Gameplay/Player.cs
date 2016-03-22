@@ -3,12 +3,13 @@ using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using ShapeSpace.Gameplay;
 using ShapeSpace.Network;
 
 public class Player : ILoadable, IUpdateable
 {
     //GAMEPLAY
-    float power = 0.9f;
+    public float power = 25f;
     public ShapeTeam team = ShapeTeam.UNKNOWN;
 
     //DRAWING
@@ -17,8 +18,8 @@ public class Player : ILoadable, IUpdateable
     Color color;
 
     //TRAIL
-    List<Trail> trail = new List<Trail>();
-    Vector2 positionLastAddedTrail = Vector2.Zero;
+    public List<Trail> trail = new List<Trail>();
+    protected Vector2 positionLastAddedTrail = Vector2.Zero;
 
     //NETWORK
     public int indexOnServer = -1;
@@ -37,7 +38,10 @@ public class Player : ILoadable, IUpdateable
     public void LoadContent(ContentManager cManager)
     {
         //Should be replaced by actual textures?
-        texture = cManager.Load<Texture2D>("SQUARE");
+        texture = new Texture2D(graphicsDevice, 1, 1);
+        texture.SetData<Color>(new[] { Color.White });
+
+        //texture = cManager.Load<Texture2D>("SQUARE");
     }
 
     public void UnloadContent() 
@@ -60,37 +64,48 @@ public class Player : ILoadable, IUpdateable
 
                 for (int i = 0; i < positions.Count - 1; i++ )
                 {
-                    if (lastChangedPosition >= positions[0].TimeSincePrevious + behindInTime)
+                    if (lastChangedPosition >= positions[0].TimeSincePrevious + behindInTime || positions[0].Temporary)
                     {
                         positions.RemoveAt(0);
 
-                        behindInTime += positions[0].TimeSincePrevious;
+                        if (!positions[0].Temporary)
+                            behindInTime += positions[0].TimeSincePrevious;
+                        else
+                            behindInTime += lastChangedPosition;
                     }
                 }
+            }
+            else if(positions.Count >= 1)
+            {
+                if(lastChangedPosition >= positions[0].TimeSincePrevious)
+                {
+                    positions.Add(new PositionInTime(0, positionNow + (positionNow - previousPosition), true));
 
-                //lastChangedPosition = 0;
-
-                //positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp(positions[0].TimeSincePrevious / 0.1f, 0, 1));
+                    positions.RemoveAt(0);
+                }
             }
 
             previousPosition = positionNow;
+
             //Interpolate between the current position and the position given by the server
             //TimeSincePrevious thus adds to the input lag on top of the latency
             if(positions.Count > 0)
-                positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp((float)gameTime.ElapsedGameTime.TotalSeconds / positions[0].TimeSincePrevious,0,1));
+                positionNow = Vector2.Lerp(positionNow, positions[0].Position, MathHelper.Clamp((float)gameTime.ElapsedGameTime.TotalSeconds / positions[0].TimeSincePrevious - 0.1f,0,1));
 
-            if (Vector2.Distance(positionLastAddedTrail, positionNow) > 30f)
-                CreateNewRowOfTrail();
+            /*for (int i = 0; i < trail.Count; i++)
+            {
+                trail[i].Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            }*/
         }
         catch { }
-
+        /*
         for (int i = 0; i < trail.Count; i++)
         {
-            trail[i].Update(gameTime);
-        }
-
+            trail[i].Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+        }*/
+        /*
         if(positions.Count > 0)
-            UIComponent.Instance._DebugString = positions.Count + "  " + positions[0].Position + " " + positionNow;
+            UIComponent.Instance._DebugString = positions.Count + "  " + positions[0].Position + " " + positionNow;*/
 
     }
 
@@ -101,38 +116,48 @@ public class Player : ILoadable, IUpdateable
             trail[i].Draw(ref spriteBatch);
         }
 
-        if (texture != null /*&& positions.Count > 0*/)
-            //spriteBatch.Draw(texture, new Rectangle((int)(positionNow.X - power / 2f), (int)(positionNow.Y - power/2f), power, power), Color.ForestGreen); 
-            spriteBatch.Draw(texture, position: positionNow, scale: new Vector2(power, power), color: Color.ForestGreen);
+        if (texture != null)
+            spriteBatch.Draw(texture, position: positionNow - new Vector2(power / 2f, power / 2f), scale: new Vector2(power, power), color: color);
     }
 
+    /// <summary>
+    /// Assigns the player to a team and handles setting the appropriate color and so on.
+    /// </summary>
+    /// <param name="team"></param>
     public void SetTeam(ShapeTeam team)
     {
         this.team = team;
-    }
-    /*
-    public void SetClass(ShapeClass type)
-    {
 
-    }*/
+        switch(team)
+        {
+            case ShapeTeam.GREEN:
+                color = Color.ForestGreen;
+                break;
+            case ShapeTeam.RED:
+                color = Color.DarkRed;
+                break;
+        }
+    }
 
     public void CreateNewRowOfTrail()
     {
-        Trail newTrail = new Trail(positionNow, 20, Color.Blue, graphicsDevice);
-        newTrail.Index = trail.Count;
-        newTrail.OnDestroy += WhenTrailIsDestroyed;
+        Trail newTrail = new Trail(positionNow, 2, Color.Blue, graphicsDevice, null);
+        newTrail.Id = trail.Count;
+        newTrail.OnDestroy += DestroyTrail;
         trail.Add(newTrail);
 
         positionLastAddedTrail = positionNow;
     }
 
-    void WhenTrailIsDestroyed(int index)
+    public void DestroyTrail(int id)
     {
-        trail.RemoveAt(index);
-
         for(int i = 0; i < trail.Count; i++)
         {
-            trail[i].Index = i;
+            if (trail[i].Id == id)
+            {
+                trail.RemoveAt(i);
+                break;
+            }
         }
     }
 }

@@ -6,11 +6,13 @@ namespace ShapeSpace.Network
     {
         public float TimeSincePrevious;
         public Vector2 Position;
+        public bool Temporary;
 
-        public PositionInTime(float time, Vector2 pos)
+        public PositionInTime(float time, Vector2 pos, bool temp)
         {
             TimeSincePrevious = time;
             Position = pos;
+            Temporary = temp;
         }
     }
 }
